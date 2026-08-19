@@ -3,11 +3,18 @@
 # Detects rsyslog, syslog-ng, or classic syslogd.
 #
 # Download (public repo, no token):
+#   wget -qO /tmp/install-linux-syslog.sh \
+#     https://raw.githubusercontent.com/andylee03/linmon-winlog/main/install-linux-syslog.sh
+#   sudo bash /tmp/install-linux-syslog.sh --setup
+#
 #   curl -fsSL -o /tmp/install-linux-syslog.sh \
 #     https://raw.githubusercontent.com/andylee03/linmon-winlog/main/install-linux-syslog.sh
 #   sudo bash /tmp/install-linux-syslog.sh --setup
 #
 # One-shot (no menu — pipe-safe):
+#   wget -qO- https://raw.githubusercontent.com/andylee03/linmon-winlog/main/install-linux-syslog.sh \
+#     | sudo bash -s -- --host 192.168.3.200 --port 514 --proto udp --min err
+#
 #   curl -fsSL https://raw.githubusercontent.com/andylee03/linmon-winlog/main/install-linux-syslog.sh \
 #     | sudo bash -s -- --host 192.168.3.200 --port 514 --proto udp --min err
 #
