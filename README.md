@@ -12,39 +12,21 @@ Source code stays in the private `vide` repo.
 
 ## Linux syslog forwarder
 
-Full install steps (public, no token):
-[INSTALL-LINUX-HOST-CLIENT.md](INSTALL-LINUX-HOST-CLIENT.md)
+Public **shell** install (not PowerShell): [INSTALL-LINUX-HOST-CLIENT.md](INSTALL-LINUX-HOST-CLIENT.md)
 
-Download and open the settings menu (host / port / proto / filter):
+`ash
+wget -S --spider https://raw.githubusercontent.com/andylee03/linmon-winlog/main/INSTALL.sh
 
-```bash
-curl -fsSL -o /tmp/install-linux-syslog.sh \
-  https://raw.githubusercontent.com/andylee03/linmon-winlog/main/install-linux-syslog.sh
-sudo bash /tmp/install-linux-syslog.sh --setup
-```
+wget -qO /tmp/INSTALL.sh https://raw.githubusercontent.com/andylee03/linmon-winlog/main/INSTALL.sh
+sudo bash /tmp/INSTALL.sh --host 192.168.3.200 --port 514 --proto udp --min err
+`
 
-One-shot (no menu, pipe-safe):
+Update:
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/andylee03/linmon-winlog/main/install-linux-syslog.sh \
-  | sudo bash -s -- --host 192.168.3.200 --port 514 --proto udp --min err
-```
-
-Options:
-
-| Flag | Meaning |
-|------|---------|
-| `--setup` / `--reconfigure` | Interactive menu (needs a terminal) |
-| `--show` | Print saved + installed config |
-| `--host` | linmon IP / name (default `192.168.3.200`) |
-| `--port` | default `514` |
-| `--proto` | `udp` or `tcp` |
-| `--min` | `err` (default) / `warn` / `crit` / `info` / `debug` |
-| `--all` | send everything |
-| `--test` | send one test message |
-| `--uninstall` | remove forwarder |
-
-Default: UDP `192.168.3.200:514`, only err/crit + auth + kernel. Last apply is stored in `/etc/linmon-syslog.conf`.
+`ash
+wget -qO /tmp/UPDATE.sh https://raw.githubusercontent.com/andylee03/linmon-winlog/main/UPDATE.sh
+sudo bash /tmp/UPDATE.sh
+`
 
 ## Proxmox VE API token (linmon Host Setup)
 

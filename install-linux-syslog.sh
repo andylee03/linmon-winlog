@@ -1,24 +1,22 @@
 #!/bin/bash
 # Configure this Linux host to forward syslog to linmon (:514).
-# Detects rsyslog, syslog-ng, or classic syslogd.
+# Detects rsyslog, syslog-ng, or classic syslogd. No extra agent binary.
 #
-# Download (public repo, no token):
-#   wget -qO /tmp/install-linux-syslog.sh \
-#     https://raw.githubusercontent.com/andylee03/linmon-winlog/main/install-linux-syslog.sh
-#   sudo bash /tmp/install-linux-syslog.sh --setup
+# Private repo (same idea as Winlog GitHub update — syslog only):
+#   andylee03/linmon-syslog
+# Key on the machine after first install:
+#   /etc/linmon/github_deploy     read-only GitHub deploy key
+#   /etc/linmon/github_token      optional PAT (contents:read) if no SSH key
 #
-#   curl -fsSL -o /tmp/install-linux-syslog.sh \
-#     https://raw.githubusercontent.com/andylee03/linmon-winlog/main/install-linux-syslog.sh
-#   sudo bash /tmp/install-linux-syslog.sh --setup
+# First install (from USB / scp, not public wget):
+#   sudo bash INSTALL.sh --key /path/to/linmon-syslog-deploy --host 192.168.3.200
+#   sudo bash INSTALL.sh --setup
 #
-# One-shot (no menu — pipe-safe):
-#   wget -qO- https://raw.githubusercontent.com/andylee03/linmon-winlog/main/install-linux-syslog.sh \
-#     | sudo bash -s -- --host 192.168.3.200 --port 514 --proto udp --min err
+# Later update (uses the key already on the box):
+#   sudo bash UPDATE.sh
+#   sudo linmon-syslog-update
 #
-#   curl -fsSL https://raw.githubusercontent.com/andylee03/linmon-winlog/main/install-linux-syslog.sh \
-#     | sudo bash -s -- --host 192.168.3.200 --port 514 --proto udp --min err
-#
-# Options (change settings anytime; re-run applies + restarts syslog):
+# Options:
 #   --setup / --reconfigure     interactive menu (needs a terminal)
 #   --show                      print saved + installed config
 #   --host IP_OR_NAME           linmon host  (default 192.168.3.200)
@@ -27,7 +25,10 @@
 #   --min err|warn|crit|info|debug
 #   --all                       send everything (overrides --min)
 #   --test                      send one test message
-#   --uninstall                 remove forwarder
+#   --update                    pull latest script from private repo, then re-apply
+#   --install-key FILE          install deploy key to /etc/linmon/github_deploy
+#   --install-token FILE        install PAT to /etc/linmon/github_token
+#   --uninstall                 remove forwarder (keeps key unless you delete it)
 #   -h / --help
 #
 # Default: UDP 192.168.3.200:514, only err/crit/alert/emerg + auth + kernel.
@@ -36,7 +37,12 @@
 
 set -eu
 
-PUBLIC_RAW="https://raw.githubusercontent.com/andylee03/linmon-winlog/main/install-linux-syslog.sh"
+SYSLOG_VERSION="1.0.1"
+SYSLOG_REPO="andylee03/linmon-syslog"
+LINMON_DIR="/etc/linmon"
+DEPLOY_KEY="${LINMON_DIR}/github_deploy"
+TOKEN_FILE="${LINMON_DIR}/github_token"
+INSTALLED_SH="/usr/local/sbin/install-linux-syslog.sh"
 STATE_FILE="/etc/linmon-syslog.conf"
 CONF_NAME="99-linmon.conf"
 
@@ -49,9 +55,12 @@ DO_TEST="0"
 UNINSTALL="0"
 DO_SETUP="0"
 DO_SHOW="0"
+DO_UPDATE="0"
+INSTALL_KEY=""
+INSTALL_TOKEN=""
 
 usage() {
-  sed -n '2,28p' "$0" | sed 's/^# \?//'
+  sed -n '2,40p' "$0" | sed 's/^# \?//'
   exit 0
 }
 
@@ -95,6 +104,9 @@ while [ $# -gt 0 ]; do
     --uninstall) UNINSTALL="1"; shift ;;
     --setup|--reconfigure|-i|--interactive) DO_SETUP="1"; shift ;;
     --show) DO_SHOW="1"; shift ;;
+    --update) DO_UPDATE="1"; shift ;;
+    --install-key) INSTALL_KEY="${2:-}"; shift 2 ;;
+    --install-token) INSTALL_TOKEN="${2:-}"; shift 2 ;;
     -h|--help) usage ;;
     *) echo "unknown arg: $1  (try --help)" >&2; exit 2 ;;
   esac
@@ -299,6 +311,14 @@ show_config() {
   else
     echo "    state:   (none — not applied yet, showing defaults / flags)"
   fi
+  echo "    script:  v${SYSLOG_VERSION}  repo=${SYSLOG_REPO}"
+  if [ -f "$DEPLOY_KEY" ]; then
+    echo "    deploy key: $DEPLOY_KEY"
+  elif [ -f "$TOKEN_FILE" ]; then
+    echo "    github token: $TOKEN_FILE"
+  else
+    echo "    github:  no key — --install-key / --install-token then --update"
+  fi
   echo
   for f in "/etc/rsyslog.d/${CONF_NAME}" /etc/syslog-ng/conf.d/linmon.conf /etc/rsyslog.conf /etc/syslog.conf; do
     [ -f "$f" ] || continue
@@ -328,11 +348,110 @@ do_install() {
   esac
 
   save_state
+  install_self
   reload_syslog
   echo "==> done. New messages only (no history)."
   echo "    change later:  sudo bash $0 --setup"
   echo "    or flags:      sudo bash $0 --host ${HOST} --port ${PORT} --proto ${PROTO} --min ${MIN}"
   echo "    test:          sudo bash $0 --test"
+  echo "    update:        sudo ${INSTALLED_SH} --update"
+}
+
+install_self() {
+  src="${BASH_SOURCE[0]:-$0}"
+  case "$src" in
+    /*) ;;
+    *) src="$(pwd)/$src" ;;
+  esac
+  if [ ! -f "$src" ]; then
+    return 0
+  fi
+  mkdir -p /usr/local/sbin "$LINMON_DIR"
+  if [ "$src" != "$INSTALLED_SH" ]; then
+    cp "$src" "$INSTALLED_SH"
+    chmod 755 "$INSTALLED_SH"
+    echo "    installed $INSTALLED_SH"
+  fi
+  dir="$(cd "$(dirname "$src")" && pwd)"
+  if [ -f "$dir/INSTALL.sh" ]; then
+    cp "$dir/INSTALL.sh" /usr/local/sbin/linmon-syslog-install
+    chmod 755 /usr/local/sbin/linmon-syslog-install
+  fi
+  if [ -f "$dir/UPDATE.sh" ]; then
+    cp "$dir/UPDATE.sh" /usr/local/sbin/linmon-syslog-update
+    chmod 755 /usr/local/sbin/linmon-syslog-update
+    echo "    installed /usr/local/sbin/linmon-syslog-update"
+  fi
+}
+
+install_github_file() {
+  # $1 dest  $2 srcfile  $3 mode
+  dest="$1"
+  src="$2"
+  mode="$3"
+  if [ -z "$src" ] || [ ! -f "$src" ]; then
+    echo "missing key/token file: ${src:-}" >&2
+    exit 1
+  fi
+  mkdir -p "$LINMON_DIR"
+  cp "$src" "$dest"
+  chmod "$mode" "$dest"
+  echo "installed $dest"
+}
+
+fetch_latest_dir() {
+  dest="$1"
+  mkdir -p "$dest"
+  if [ -f "$DEPLOY_KEY" ] && command -v git >/dev/null 2>&1; then
+    tmp=$(mktemp -d)
+    GIT_SSH_COMMAND="ssh -i ${DEPLOY_KEY} -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new" \
+      git clone --depth 1 "git@github.com:${SYSLOG_REPO}.git" "$tmp/repo"
+    if [ -f "$tmp/repo/install-linux-syslog.sh" ]; then
+      cp "$tmp/repo/install-linux-syslog.sh" "$dest/"
+      [ -f "$tmp/repo/INSTALL.sh" ] && cp "$tmp/repo/INSTALL.sh" "$dest/"
+      [ -f "$tmp/repo/UPDATE.sh" ] && cp "$tmp/repo/UPDATE.sh" "$dest/"
+      rm -rf "$tmp"
+      return 0
+    fi
+    rm -rf "$tmp"
+  fi
+  if [ -f "$TOKEN_FILE" ] && command -v curl >/dev/null 2>&1; then
+    tok=$(tr -d '[:space:]' < "$TOKEN_FILE")
+    curl -fsSL \
+      -H "Authorization: Bearer ${tok}" \
+      -H "Accept: application/vnd.github.raw" \
+      "https://api.github.com/repos/${SYSLOG_REPO}/contents/install-linux-syslog.sh" \
+      -o "$dest/install-linux-syslog.sh"
+    return 0
+  fi
+  echo "Cannot --update: need ${DEPLOY_KEY} + git, or ${TOKEN_FILE} + curl" >&2
+  echo "First install:  sudo bash INSTALL.sh --key /path/to/deploy_key" >&2
+  exit 1
+}
+
+do_update() {
+  echo "==> update from private ${SYSLOG_REPO}"
+  tmp=$(mktemp -d)
+  fetch_latest_dir "$tmp"
+  if ! head -1 "$tmp/install-linux-syslog.sh" | grep -q bash; then
+    echo "download does not look like the installer" >&2
+    rm -rf "$tmp"
+    exit 1
+  fi
+  mkdir -p /usr/local/sbin
+  cp "$tmp/install-linux-syslog.sh" "$INSTALLED_SH"
+  chmod 755 "$INSTALLED_SH"
+  if [ -f "$tmp/INSTALL.sh" ]; then
+    cp "$tmp/INSTALL.sh" /usr/local/sbin/linmon-syslog-install
+    chmod 755 /usr/local/sbin/linmon-syslog-install
+  fi
+  if [ -f "$tmp/UPDATE.sh" ]; then
+    cp "$tmp/UPDATE.sh" /usr/local/sbin/linmon-syslog-update
+    chmod 755 /usr/local/sbin/linmon-syslog-update
+  fi
+  rm -rf "$tmp"
+  echo "    wrote $INSTALLED_SH"
+  exec bash "$INSTALLED_SH"
 }
 
 ask() {
@@ -354,14 +473,11 @@ need_tty() {
   fi
   echo "Interactive --setup needs a terminal (do not pipe the script)."
   echo
-  echo "Download from the public repo, then run the menu:"
-  echo "  curl -fsSL -o /tmp/install-linux-syslog.sh \\"
-  echo "    ${PUBLIC_RAW}"
-  echo "  sudo bash /tmp/install-linux-syslog.sh --setup"
+  echo "Copy the office pack, then:"
+  echo "  sudo bash INSTALL.sh --key /path/to/linmon-syslog-deploy --setup"
   echo
-  echo "Or apply settings without a menu:"
-  echo "  curl -fsSL ${PUBLIC_RAW} \\"
-  echo "    | sudo bash -s -- --host 192.168.3.200 --port 514 --proto udp --min err"
+  echo "Or apply without a menu:"
+  echo "  sudo bash INSTALL.sh --key /path/to/linmon-syslog-deploy --host 192.168.3.200"
   exit 1
 }
 
@@ -387,9 +503,10 @@ setup_menu() {
     echo "  6) Send test message"
     echo "  7) Show installed files"
     echo "  8) Uninstall"
+    echo "  9) Update script from private GitHub"
     echo "  0) Quit"
     echo
-    printf "Select [0-8]: "
+    printf "Select [0-9]: "
     choice=""
     read -r choice || true
     case "${choice:-}" in
@@ -433,6 +550,9 @@ setup_menu() {
       8)
         do_uninstall
         ;;
+      9)
+        do_update
+        ;;
       0|"")
         echo "bye (nothing applied unless you chose 5)"
         exit 0
@@ -445,6 +565,23 @@ setup_menu() {
 }
 
 # --- main ---
+
+if [ -n "$INSTALL_KEY" ]; then
+  install_github_file "$DEPLOY_KEY" "$INSTALL_KEY" 600
+fi
+if [ -n "$INSTALL_TOKEN" ]; then
+  install_github_file "$TOKEN_FILE" "$INSTALL_TOKEN" 600
+fi
+if [ -n "$INSTALL_KEY" ] || [ -n "$INSTALL_TOKEN" ]; then
+  if [ "$DO_UPDATE" != "1" ] && [ "$DO_SETUP" != "1" ] && [ "$DO_SHOW" != "1" ] && [ "$UNINSTALL" != "1" ] && [ "$DO_TEST" != "1" ]; then
+    echo "key installed. Next: sudo bash $0 --setup   or   sudo bash $0 --host …"
+    exit 0
+  fi
+fi
+
+if [ "$DO_UPDATE" = "1" ]; then
+  do_update
+fi
 
 if [ "$DO_SHOW" = "1" ]; then
   show_config
