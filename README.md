@@ -12,6 +12,9 @@ Source code stays in the private `vide` repo.
 
 ## Linux syslog forwarder
 
+Full install steps (public, no token):
+[INSTALL-LINUX-HOST-CLIENT.md](INSTALL-LINUX-HOST-CLIENT.md)
+
 Download and open the settings menu (host / port / proto / filter):
 
 ```bash
