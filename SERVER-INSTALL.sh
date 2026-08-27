@@ -75,8 +75,11 @@ command -v docker >/dev/null 2>&1 || { echo "ERROR: need docker" >&2; exit 1; }
 
 mkdir -p "$(dirname "$CLONE")" "$HOME/.linmon"
 chmod 600 "$KEY" 2>/dev/null || true
-cp -f "$KEY" "$HOME/.linmon/bin_deploy"
-chmod 600 "$HOME/.linmon/bin_deploy"
+STASH="$HOME/.linmon/bin_deploy"
+if [ "$(readlink -f "$KEY" 2>/dev/null || echo "$KEY")" != "$(readlink -f "$STASH" 2>/dev/null || echo "$STASH")" ]; then
+  cp -f "$KEY" "$STASH"
+fi
+chmod 600 "$STASH"
 echo "Clone git@github.com:${BIN_REPO}.git (images + bins)…"
 rm -rf "$CLONE"
 GIT_SSH_COMMAND="ssh -i ${HOME}/.linmon/bin_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new" \
