@@ -75,20 +75,23 @@ Both lines must print `OK`. If `docker-compose-v2` is missing: `sudo apt-get ins
 
 ## 3. Install (GitHub)
 
-Place `linmon-bin-deploy` in the current directory.
+Copy `linmon-bin-deploy` onto the host, then pass its **real path** (the file must exist; `./` is relative to the current directory).
 
 ```bash
+ls -l "$HOME/linmon-bin-deploy"    # must exist before INSTALL
 wget -qO /tmp/SERVER-INSTALL.sh \
   https://raw.githubusercontent.com/andylee03/linmon-winlog/main/SERVER-INSTALL.sh
-bash /tmp/SERVER-INSTALL.sh --key ./linmon-bin-deploy --dir /data/linmon
+bash /tmp/SERVER-INSTALL.sh --key "$HOME/linmon-bin-deploy" --dir /data/linmon
 ```
+
+If the shell is in `/tmp` and the key is in the home directory, `--key ./linmon-bin-deploy` fails (`key file not found`). Use `"$HOME/linmon-bin-deploy"`.
 
 The script clones `andylee03/linmon-bin` (image tarball, compose files, `linmon` / `collect-log` binaries), loads images, starts Compose, then copies binaries into the containers.
 
 | Stage | Pass | Fail |
 |-------|------|------|
 | `wget` | `/tmp/SERVER-INSTALL.sh` starts with `#!/bin/bash` | HTTP 404 — bootstrap not on `linmon-winlog` |
-| Key | Log line `wrote …/.linmon/bin_deploy` | `key file not found` — private key missing |
+| Key | Log line `wrote …/.linmon/bin_deploy` | `key file not found: ./linmon-bin-deploy` — file is not in the current directory; use `$HOME/linmon-bin-deploy` |
 | Clone | `Cloning into` `andylee03/linmon-bin` | `Permission denied (publickey)` — not `linmon-bin-deploy` |
 | Images | `Loaded image: linmon:latest` (and nginx / rdp-enc) | `linmon-images.tgz missing` — office must run `release-linmon-bin.ps1` |
 | Compose | Containers `Up` / `healthy` | `do not run as root`; `docker not usable` |

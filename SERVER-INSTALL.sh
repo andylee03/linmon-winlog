@@ -2,12 +2,9 @@
 # Bootstrap LINMON syslog SERVER from GitHub (no scp of the 90MB pack).
 # Public: https://raw.githubusercontent.com/andylee03/linmon-winlog/main/SERVER-INSTALL.sh
 #
-# You still need the small private deploy key once (linmon-bin-deploy).
-# Everything else is git clone of private andylee03/linmon-bin.
-#
 #   wget -qO /tmp/SERVER-INSTALL.sh \
 #     https://raw.githubusercontent.com/andylee03/linmon-winlog/main/SERVER-INSTALL.sh
-#   bash /tmp/SERVER-INSTALL.sh --key ./linmon-bin-deploy --dir /data/linmon
+#   bash /tmp/SERVER-INSTALL.sh --key /path/to/linmon-bin-deploy --dir /data/linmon
 set -eu
 BIN_REPO="${LINMON_BIN_REPO:-andylee03/linmon-bin}"
 KEY=""
@@ -19,21 +16,61 @@ if [ "$(id -u)" -eq 0 ]; then
   exit 1
 fi
 
+strip_cr() { printf '%s' "$1" | tr -d '\r'; }
+
 while [ $# -gt 0 ]; do
-  case "$1" in
-    --key|--install-key) KEY="${2:-}"; shift ;;
-    --dir) DIR="${2:-}"; shift ;;
-    -h|--help) sed -n '2,14p' "$0" | sed 's/^# \?//'; exit 0 ;;
-    *) echo "unknown arg: $1" >&2; exit 1 ;;
+  a="$(strip_cr "$1")"
+  case "$a" in
+    --key|--install-key)
+      if [ $# -lt 2 ]; then
+        echo "ERROR: $a requires a path to linmon-bin-deploy" >&2
+        exit 1
+      fi
+      KEY="$(strip_cr "$2")"
+      shift 2
+      ;;
+    --key=*)
+      KEY="$(strip_cr "${a#--key=}")"
+      shift
+      ;;
+    --dir)
+      if [ $# -lt 2 ]; then
+        echo "ERROR: --dir requires a path" >&2
+        exit 1
+      fi
+      DIR="$(strip_cr "$2")"
+      shift 2
+      ;;
+    --dir=*)
+      DIR="$(strip_cr "${a#--dir=}")"
+      shift
+      ;;
+    -h|--help)
+      sed -n '2,10p' "$0" | sed 's/^# \?//'
+      exit 0
+      ;;
+    *)
+      echo "ERROR: unknown argument: $a" >&2
+      exit 1
+      ;;
   esac
-  shift
 done
 
-if [ -z "$KEY" ] || [ ! -f "$KEY" ]; then
-  echo "ERROR: --key FILE is required (private deploy key linmon-bin-deploy)" >&2
+if [ -z "$KEY" ]; then
+  echo "ERROR: missing --key /path/to/linmon-bin-deploy" >&2
+  echo "  cwd=$(pwd)" >&2
+  echo "  example: bash $0 --key \$HOME/linmon-bin-deploy --dir /data/linmon" >&2
   exit 1
 fi
-command -v git >/dev/null 2>&1 || { echo "ERROR: need git" >&2; exit 1; }
+if [ ! -f "$KEY" ]; then
+  echo "ERROR: key file not found: $KEY" >&2
+  echo "  cwd=$(pwd)" >&2
+  echo "  ls -l $(dirname -- "$KEY")" >&2
+  ls -l "$(dirname -- "$KEY")" 2>/dev/null || true
+  echo "  Copy the private key (not .pub) from the office PC: D:\\vide\\keys\\linmon-bin-deploy" >&2
+  exit 1
+fi
+command -v git >/dev/null 2>&1 || { echo "ERROR: need git (sudo apt-get install -y git)" >&2; exit 1; }
 command -v docker >/dev/null 2>&1 || { echo "ERROR: need docker" >&2; exit 1; }
 
 mkdir -p "$(dirname "$CLONE")" "$HOME/.linmon"
