@@ -34,18 +34,23 @@ You only copy **one small file** to the new host: **`linmon-bin-deploy`** (see t
 On the **new host** (docker-group user, **not root**):
 
 ```bash
-# key already in the current directory, e.g. ./linmon-bin-deploy
+# --key must be linmon-bin-deploy (same key as 3.200 / 11.4). See “Which key?” above.
 wget -qO /tmp/SERVER-INSTALL.sh \
   https://raw.githubusercontent.com/andylee03/linmon-winlog/main/SERVER-INSTALL.sh
 bash /tmp/SERVER-INSTALL.sh --key ./linmon-bin-deploy --dir /data/linmon
 ```
 
-**Expected:** `Clone git@github.com:andylee03/linmon-bin.git`, `docker load`, `docker compose up`, `docker cp`, then JSON from `/api/version`.
+`--key ./linmon-bin-deploy` is **not** the syslog client key and **not** `id_ed25519`. It is the **same** private file as office `D:\vide\keys\linmon-bin-deploy` and as `~/.linmon/bin_deploy` on 3.200 / 11.4.
+
+**Expected (`wget`):** file `/tmp/SERVER-INSTALL.sh` exists; first line `#!/bin/bash`.  
+**Expected (`SERVER-INSTALL.sh`):** `Clone git@github.com:andylee03/linmon-bin.git`, `docker load`, `docker compose up`, `docker cp`, then JSON from `/api/version`.  
+**Expected (key):** `wrote /home/…/.linmon/bin_deploy`
 
 **Error:** `wget` 404 — `SERVER-INSTALL.sh` not on `linmon-winlog` yet; office must push it.  
-**Error:** `Permission denied (publickey)` — wrong key (must be **linmon-bin** deploy key, not syslog / id_ed25519).  
-**Error:** `ERROR: --key FILE is required` — pass `--key ./linmon-bin-deploy`.  
-**Error:** `linmon-images.tgz missing` — office must run `.\scripts\release-linmon-bin.ps1` so the tgz is in the private repo.
+**Error:** `ERROR: --key FILE is required` / `key file not found` — put **`linmon-bin-deploy`** (private, no `.pub`) in the current directory and pass `--key ./linmon-bin-deploy`.  
+**Error:** `Permission denied (publickey)` — **wrong key**. Do not use `linmon-syslog-deploy` or `id_ed25519`. Copy `D:\vide\keys\linmon-bin-deploy` again.  
+**Error:** `linmon-images.tgz missing` — office must run `.\scripts\release-linmon-bin.ps1` so the tgz is in the private repo.  
+**Error:** `ERROR: do not run as root` — drop `sudo`.
 
 Office publish (after source commit):
 
