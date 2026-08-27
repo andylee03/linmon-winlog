@@ -7,10 +7,29 @@ Source stays on the office PC. The new host does **not** `git clone vide`.
 
 ---
 
+## Which key?
+
+Office folder: `D:\vide\keys\`
+
+| File | Use it for | Not for |
+|------|------------|---------|
+| **`linmon-bin-deploy`** (private, no `.pub`) | **This guide** — syslog **server** `SERVER-INSTALL.sh` / `UPDATE.sh` | Linux client rsyslog; SSH to 3.200/11.4 |
+| `linmon-syslog-deploy` | Linux **client** private pack `andylee03/linmon-syslog` | Server INSTALL |
+| `id_ed25519` | SSH into 3.200 / 11.4 as `athenabest` | GitHub deploy / INSTALL `--key` |
+
+It is the **same** `linmon-bin-deploy` already used on 3.200 and 11.4 (`~/.linmon/bin_deploy`). GitHub allows one deploy key per repo, so the **syslog** key cannot clone `linmon-bin`.
+
+Public Linux **client** wget (`andylee03/linmon-winlog` `INSTALL.sh`) needs **no** key.
+
+**Expected (`linmon-bin-deploy`):** first line `-----BEGIN OPENSSH PRIVATE KEY-----`, size ~411 bytes.  
+**Error:** you copied `linmon-bin-deploy.pub` — INSTALL needs the **private** file.  
+**Error:** `Permission denied (publickey)` on clone — you used syslog key or `id_ed25519`.
+
+---
+
 ## 0. Download from GitHub (no scp of the 90MB tgz)
 
-You only copy **one small file** to the new host: the private deploy key  
-`D:\vide\keys\linmon-bin-deploy` (not `.pub`). Everything else is `git clone` of private `andylee03/linmon-bin` (Docker images tgz + linux bins + compose + INSTALL).
+You only copy **one small file** to the new host: **`linmon-bin-deploy`** (see table above). Everything else is `git clone` of private `andylee03/linmon-bin` (Docker images tgz + linux bins + compose + INSTALL).
 
 On the **new host** (docker-group user, **not root**):
 
