@@ -11,6 +11,7 @@
 | Syslog | Host LAN IP, port **514/udp** and **514/tcp** (never the website hostname) |
 | Source of binaries / images | Private GitHub `andylee03/linmon-bin` (no source code) |
 | Bootstrap script | Public `https://raw.githubusercontent.com/andylee03/linmon-winlog/main/SERVER-INSTALL.sh` |
+| Update | Public `https://raw.githubusercontent.com/andylee03/linmon-winlog/main/SERVER-UPDATE.sh` (not Linux-client `UPDATE.sh`) |
 | Uninstall | Public `https://raw.githubusercontent.com/andylee03/linmon-winlog/main/SERVER-UNINSTALL.sh` |
 | Office publish | `.\scripts\release-linmon-bin.ps1` on the development PC |
 
@@ -162,16 +163,28 @@ Change the password on first login. Syslog clients use **`<LAN-IP>`**, not the H
 
 ## 4. Updates
 
-Does not drop Postgres volumes or rewrite `.env` / `linmon.json`. Restarts `linmon` and `linmon-collect-log` for a few seconds.
+Does **not** drop Postgres / `.env` / `linmon.json`. Restarts `linmon` and `linmon-collect-log` for a few seconds.
+
+**Public wget** (same as INSTALL). This is **`SERVER-UPDATE.sh`**, not the Linux-client `UPDATE.sh`.
+
+The binary pack is **private** (`andylee03/linmon-bin`). wget only fetches the bootstrap; git clone with `~/.linmon/bin_deploy` pulls `linmon` + `collect-log`. Do not `sudo`. Full clone (not sparse) — avoids `fatal: 'INSTALL.sh' is not a directory`.
 
 ```bash
-bash /data/linmon/UPDATE.sh
+wget -qO /tmp/SERVER-UPDATE.sh \
+  https://raw.githubusercontent.com/andylee03/linmon-winlog/main/SERVER-UPDATE.sh
+bash /tmp/SERVER-UPDATE.sh --dir /data/linmon
+curl -sS http://127.0.0.1/api/version
 ```
+
+`--key` only if `~/.linmon/bin_deploy` is missing. On-disk `bash /data/linmon/UPDATE.sh` still works after the scripts have been refreshed.
 
 | Check | Pass | Fail |
 |-------|------|------|
-| Fetch | Sparse clone of `linmon-bin`; `docker cp`; JSON `commit` matches latest `release-linmon-bin.ps1` | `Permission denied (publickey)` — restore key with `INSTALL.sh --key ./linmon-bin-deploy` |
+| wget | HTTP 200, file starts `#!/bin/bash` | 404 — not on `linmon-winlog` |
+| Clone | `andylee03/linmon-bin`; then `docker cp` | `Permission denied (publickey)` — restore `--key` |
+| | | `linmon is not running` — INSTALL first |
 | | | `git: command not found` — `sudo apt-get install -y git` |
+| API | JSON `version` matches latest `release-linmon-bin.ps1` | Old commit — clone failed; leftover `/data/linmon/UPDATE.sh` used sparse |
 
 Office:
 
