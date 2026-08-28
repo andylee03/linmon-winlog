@@ -204,7 +204,18 @@ Always **wget a fresh `SERVER-UPDATE.sh` from GitHub**. Do not scp binaries from
 
 ## 5. Site configuration
 
-First web login: **`admin` / `change-me`**. Change that password immediately. Use **Host Setup** and **Syslog Setup** for this site only. Do not copy `linmon.json` from another site.
+First web login: **`admin` / `change-me`**. Change that password immediately. Do not copy `linmon.json` from another site.
+
+**MENU how-to** (Save writes; Close discards): **`docs/LINMON-ADMIN-GUIDE.md` §3b–3g**.
+
+| MENU | Use |
+|------|-----|
+| Host Setup | Linux / Windows / SMA / PVE / PBS / FortiGate. This box: IP `172.17.0.1`, not its LAN IP. |
+| Web / SSL Setup | Websites in **Postgres**. DOWN/SSL mail + Slack. Not Host Setup. |
+| Syslog Setup | `Name=LAN-IP` for FG / QNAP / SMA (Docker 172.16.0.1). |
+| Scheduler | CSV path e.g. `/data/exportlog`. Test Export. |
+| Display | This browser only. **Apply**. |
+| User Setup | **Save policy**, enroll Authenticator/Yubi, Admin/SSH/RDP ticks. |
 
 ---
 
