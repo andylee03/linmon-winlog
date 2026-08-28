@@ -149,7 +149,14 @@ Pass (example):
 
 `docker ps` should list `linmon`, `linmon-postgres`, `linmon-nginx`, `linmon-collect-log`, and typically `linmon-guacd`, `linmon-rdp-enc`.
 
-Browser: `http://<LAN-IP>/` — LINMON login. Syslog clients use **`<LAN-IP>`**, not the HTTPS name.
+Browser: `http://<LAN-IP>/` — LINMON login.
+
+| Item | Default (from `linmon.example.json`) |
+|------|--------------------------------------|
+| User | **`admin`** |
+| Password | **`change-me`** |
+
+Change the password on first login. Syslog clients use **`<LAN-IP>`**, not the HTTPS name.
 
 ---
 
@@ -178,7 +185,112 @@ Pass: `pushed main` on `andylee03/linmon-bin`.
 
 ## 5. Site configuration
 
-Change the example web password on first login. Use **Host Setup** and **Syslog Setup** for this site only.
+First web login: **`admin` / `change-me`**. Change that password immediately. Use **Host Setup** and **Syslog Setup** for this site only. Do not copy `linmon.json` from another site.
+
+---
+
+## 5b. Create API users on FortiGate / SMA / PVE / PBS
+
+Dashboard CPU/RAM for these kinds comes from **REST API**, not SSH. Create the account **on the device first**, copy the secret **once**, then paste into **MENU → Host Setup**. Blank Password on later saves keeps the stored key.
+
+Do not put API secrets in git. Linmon server must reach the **management IP** (443 / 8443 / 8006 / 8007). Syslog is still **LAN IP:514**.
+
+| Kind | Create the user on | Host Setup User | Host Setup Password | Port |
+|------|--------------------|-----------------|---------------------|------|
+| FortiGate | FortiOS REST API Admin | API admin name (e.g. `linmon`) | API **key** (once) | **443** |
+| SMA | FortiAuthenticator **Administrator** → API Keys | `API-USER` | AMC API key | **8443** |
+| PVE | `linmon@pve` + token `linmon` | **`linmon@pve!linmon`** (full Token ID) | token secret (once) | **8006** |
+| PBS | `linmon@pbs` + token `linmon` | **`linmon@pbs!linmon`** | token secret (once) | **8007** |
+
+### FortiGate (REST API Admin)
+
+On the FortiGate GUI (HTTPS management):
+
+1. **System → Administrators → Create New → REST API Admin**.
+2. **Username** e.g. `linmon` (this is Host Setup **User**).
+3. **Administrator Profile:** `super_admin_readonly` (or a custom read-only profile).
+4. **Trusted Hosts:** the **linmon server** LAN IP (e.g. `192.168.21.4/32`). Not Cloudflare, not 172.16.0.20.
+5. **OK**. Copy the **API key** — shown **once**. That is Host Setup **Password**.
+
+CLI (same result):
+
+```bash
+config system api-user
+    edit "linmon"
+        set accprofile "super_admin_readonly"
+        set comments "linmon dashboard"
+        config trusthost
+            edit 1
+                set ipv4-trusthost 192.168.21.4 255.255.255.255
+            next
+        end
+    next
+end
+execute api-user generate-key linmon
+```
+
+Then **Host Setup → + FortiGate**: Name, IP = FG **management** IP, Port **443**, User `linmon`, Password = API key, On, **Save**.
+
+Syslog still needs **Syslog Setup** `devname=LAN-IP` (display name and `devname` may differ).
+
+| Check | Pass | Fail |
+|-------|------|------|
+| Card | CPU/RAM bars after a poll | 401 — wrong key; 403 — profile/trusthost; timeout — linmon cannot reach :443 |
+
+### SMA (FortiAuthenticator AMC)
+
+Do **not** use the Services menu. API keys live under **administrator accounts**.
+
+1. Log in to SMA GUI `https://<SMA>:8443`.
+2. **System → Administration → Administrators** (wording varies by FortiAuthenticator version) → create **`API-USER`** if missing. Enable **REST API**.
+3. Open that administrator → **API Keys** → generate. Copy the key **once**.
+4. **Host Setup → + SMA**: IP = SMA LAN IP, Port **8443**, User **`API-USER`**, Password = API key, **Save**.
+
+Linmon sends header `X-API-Key`. Syslog hostname is often **`SMAHK`**, not the Host Setup display name — map in **Syslog Setup** if needed.
+
+| Check | Pass | Fail |
+|-------|------|------|
+| Card | CPU/RAM + user count | 401 — key from wrong menu; timeout — :8443 not reachable from linmon |
+
+### PVE (Proxmox VE)
+
+Run **as root on the Proxmox node** (creates `linmon@pve!linmon`, role **PVEAuditor**):
+
+```bash
+wget -qO /tmp/install-pve-linmon-api.sh \
+  https://raw.githubusercontent.com/andylee03/linmon-winlog/main/install-pve-linmon-api.sh
+bash /tmp/install-pve-linmon-api.sh
+```
+
+Secret is printed **once**. **Host Setup → + PVE**: Port **8006**, User = **full Token ID** `linmon@pve!linmon` (not `root@pam!linmon` unless you made that), Password = secret.
+
+`--recreate` deletes the old token and prints a new secret.
+
+GUI: **Datacenter → Permissions → Users** (`linmon@pve`) → **API Tokens** → Add (`linmon`, Privilege Separation **off**). ACL: **PVEAuditor** on `/`.
+
+| Check | Pass | Fail |
+|-------|------|------|
+| Card | version + VM list / CPU RAM | 401 — User field is not `user@realm!tokenid`; wrong secret |
+
+### PBS (Proxmox Backup Server)
+
+Run **as root on the PBS host**:
+
+```bash
+wget -qO /tmp/install-pbs-linmon-api.sh \
+  https://raw.githubusercontent.com/andylee03/linmon-winlog/main/install-pbs-linmon-api.sh
+bash /tmp/install-pbs-linmon-api.sh
+```
+
+**Host Setup → + PBS**: Port **8007**, User **`linmon@pbs!linmon`**, Password = secret.
+
+The script grants **Audit** on `/` and **DatastoreAudit** on `/datastore` to **both** the user and the token (PBS intersects them).
+
+GUI: **Configuration → Access Control → User Management** + **API Tokens**. Same ACLs on the token id.
+
+| Check | Pass | Fail |
+|-------|------|------|
+| Card | PBS version / datastore | 401 — token ACL missing (user ACL alone is not enough) |
 
 ---
 
