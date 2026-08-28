@@ -172,9 +172,19 @@ The binary pack is **private** (`andylee03/linmon-bin`). wget only fetches the b
 ```bash
 wget -qO /tmp/SERVER-UPDATE.sh \
   https://raw.githubusercontent.com/andylee03/linmon-winlog/main/SERVER-UPDATE.sh
-bash /tmp/SERVER-UPDATE.sh --dir /data/linmon
+bash /tmp/SERVER-UPDATE.sh
 curl -sS http://127.0.0.1/api/version
+# or: curl -skS https://127.0.0.1/api/version
 ```
+
+`--dir` is optional if the `linmon` container is running (script reads Compose working dir). Explicit:
+
+| Site | `--dir` | Why local `UPDATE.sh` fails |
+|------|---------|-----------------------------|
+| **3.200** (prod) | `/home/athenabest/vide` | **No `/data/linmon`**. `bash vide/UPDATE.sh` uses **sparse-checkout** (`INSTALL.sh is not a directory`) |
+| SG 11.4 / syslog-4 | `/data/linmon` | Same sparse bug on old on-disk `UPDATE.sh` |
+
+Do **not** `git pull` `vide` on 3.200. Do not `sudo`.
 
 Always **wget a fresh `SERVER-UPDATE.sh` from GitHub**. Do not scp binaries from the office PC. Do not rely on an old `/data/linmon/UPDATE.sh` (sparse-checkout bug). `--key` only if `~/.linmon/bin_deploy` is missing.
 

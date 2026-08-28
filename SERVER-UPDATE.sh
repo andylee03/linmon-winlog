@@ -6,13 +6,14 @@
 #   wget -qO /tmp/SERVER-UPDATE.sh \
 #     https://raw.githubusercontent.com/andylee03/linmon-winlog/main/SERVER-UPDATE.sh
 #   bash /tmp/SERVER-UPDATE.sh --dir /data/linmon
+#   bash /tmp/SERVER-UPDATE.sh --dir /home/athenabest/vide   # prod 3.200 (no /data/linmon)
 #
 # Uses ~/.linmon/bin_deploy from first INSTALL. Optional: --key ./linmon-bin-deploy
 # Always wget this file from GitHub. Do not scp binaries from the office PC.
 set -eu
 BIN_REPO="${LINMON_BIN_REPO:-andylee03/linmon-bin}"
 KEY=""
-DIR="${LINMON_DIR:-/data/linmon}"
+DIR="${LINMON_DIR:-}"
 CLONE="${HOME}/.linmon/bin-repo"
 STASH="${HOME}/.linmon/bin_deploy"
 
@@ -61,6 +62,26 @@ command -v docker >/dev/null 2>&1 || { echo "ERROR: need docker" >&2; exit 1; }
 if ! docker ps --format '{{.Names}}' | grep -qx linmon; then
   echo "ERROR: container linmon is not running. Use SERVER-INSTALL.sh first." >&2
   docker ps -a --filter name=linmon || true
+  exit 1
+fi
+
+if [ -z "$DIR" ]; then
+  wd="$(docker inspect linmon --format '{{index .Config.Labels "com.docker.compose.project.working_dir"}}' 2>/dev/null || true)"
+  if [ -n "$wd" ] && [ -d "$wd" ]; then
+    DIR="$wd"
+  elif [ -d /data/linmon ]; then
+    DIR=/data/linmon
+  elif [ -d "$HOME/vide" ] && [ -f "$HOME/vide/docker-compose.yml" ]; then
+    DIR="$HOME/vide"
+  else
+    DIR=/data/linmon
+  fi
+fi
+echo "Update dir: $DIR"
+if [ ! -d "$DIR" ]; then
+  echo "ERROR: runtime dir not found: $DIR" >&2
+  echo "  3.200:  bash $0 --dir /home/athenabest/vide" >&2
+  echo "  11.4 / syslog-4:  bash $0 --dir /data/linmon" >&2
   exit 1
 fi
 
