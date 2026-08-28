@@ -186,13 +186,21 @@ curl -sS http://127.0.0.1/api/version
 | | | `git: command not found` — `sudo apt-get install -y git` |
 | API | JSON `version` matches latest `release-linmon-bin.ps1` | Old commit — clone failed; leftover `/data/linmon/UPDATE.sh` used sparse |
 
-Office:
+Office (or GitHub Action `release-linmon-bin` on `vide` `main`):
+
+**Invariant:** private **`andylee03/linmon-bin` `main` is always the latest pack.** `SERVER-UPDATE.sh` clones that repo. Do not leave `vide` ahead of `linmon-bin`.
+
+After any linmon / collect-log / INSTALL scripts / `linmon.example.json` change:
+
+1. Bump `internal/linmon/version.go`
+2. `git push origin main`
+3. `.\scripts\release-linmon-bin.ps1` (Linux: `bash scripts/release-linmon-bin.sh`) unless the Action already pushed
 
 ```powershell
 .\scripts\release-linmon-bin.ps1
 ```
 
-Pass: `pushed main` on `andylee03/linmon-bin`.
+Pass: `pushed main` on `andylee03/linmon-bin`; `VERSION` / `/api/version` match. GitHub Actions needs secret **`PACK_GITHUB_TOKEN`** (PAT with write to `linmon-bin` + `linmon-winlog`). Until that secret exists, always run the office script.
 
 ---
 
