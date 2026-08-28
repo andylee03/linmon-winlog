@@ -179,10 +179,12 @@ curl -sS http://127.0.0.1/api/version
 
 `--dir` is optional if the `linmon` container is running (script reads Compose working dir). Explicit:
 
-| Site | `--dir` | Why local `UPDATE.sh` fails |
-|------|---------|-----------------------------|
-| **3.200** (prod) | `/home/athenabest/vide` | **No `/data/linmon`**. `bash vide/UPDATE.sh` uses **sparse-checkout** (`INSTALL.sh is not a directory`) |
-| SG 11.4 / syslog-4 | `/data/linmon` | Same sparse bug on old on-disk `UPDATE.sh` |
+| Site | `--dir` | Notes |
+|------|---------|-------|
+| **3.200** (prod) | **`/data/linmon`** (`/mnt/data1t` bind-mounted as `/data`) | Do not `git pull` `/home/athenabest/vide`. |
+| SG 11.4 / syslog-4 | `/data/linmon` | |
+
+Old on-disk `UPDATE.sh` uses sparse-checkout (`fatal: INSTALL.sh is not a directory`) — always wget `SERVER-UPDATE.sh`.
 
 Do **not** `git pull` `vide` on 3.200. Do not `sudo`.
 
@@ -585,6 +587,31 @@ logger -p user.err 'linmon-syslog-test from syslog-4 host'
 
 FortiGate / QNAP / other PCs still send to **`192.168.21.4:514`**. Only the **linmon host itself** uses `172.16.0.20`.
 
+### 6c. Host Setup SSH to **this** machine (21.4 / 11.4 / 3.200)
+
+collect-log is a container. **SSH to the host LAN IP times out** (same class of Docker hairpin as §6b):
+
+```text
+SSH offline: dial tcp 192.168.21.4:22: i/o timeout
+(no key_path; password set; enable Host Setup: HostKey +ssh-rsa; …)
+```
+
+TCP never connected. **Do not** tick HostKey/Pubkey +ssh-rsa to fix a timeout.
+
+On **syslog-4**, Host Setup Linux row for the box itself:
+
+| Field | Value |
+|-------|--------|
+| IP / Host | **`host.docker.internal`** (or `172.17.0.1`) — **not** `192.168.21.4` |
+| Port | `22` |
+| User | e.g. `metis` |
+| Key path | `/keys/id_ed25519` if you mounted a key; else Password |
+| Log | optional SSH journal |
+
+Same for 11.4 (`192.168.11.4` forbidden) and 3.200 (`192.168.3.200` forbidden). Other LAN PCs still use their real IP.
+
+If you only need syslog from this host, skip Host Setup and use §6b rsyslog.
+
 ---
 
 ## 7. Uninstall (wipe this host)
@@ -653,6 +680,22 @@ rm -rf /data/linmon
 Then INSTALL again (not as root). Newer `SERVER-UNINSTALL.sh` tries `sudo rm` itself; if sudo asks for a password it prints the same command.
 
 Re-install afterwards is a **new** site (empty hosts, new DB). Do not reuse another site’s `.env`.
+
+---
+
+## Appendix D — 3.200: `/mnt/data1t` bind-mounted as `/data`
+
+Prod (`192.168.3.200`) 1 TB disk is mounted at **`/mnt/data1t`**. Bind it to **`/data`** so paths match 11.4 / syslog-4 (`/data/linmon`). **Do not grow linmon on the 490 GB root LV.**
+
+| Role | Path (after bind) | Same bytes as |
+|------|-------------------|----------------|
+| Docker engine | `/data/docker` | `/mnt/data1t/docker` (daemon.json can stay that path) |
+| Postgres | `/data/docker/volumes/vide_pgdata/_data` | named volume `vide_pgdata` |
+| RDP recordings | `/data/docker/rdp-recording` | `/mnt/data1t/docker/rdp-recording` |
+| Scheduler CSV | `/data/exportlog` | `/mnt/data1t/exportlog` |
+| Linmon runtime | **`/data/linmon`** | compose + configs + keys + certs |
+
+**Done on prod (2026-08-28):** `fstab` has `/mnt/data1t /data none bind 0 0`. Runtime **`/data/linmon`**, `COMPOSE_PROJECT_NAME=vide` (same `vide_pgdata`). UPDATE: `--dir /data/linmon`. Leave `/home/athenabest/vide` unused. Do not `git pull`. Do not `down -v`. Do not unmount `/mnt/data1t`.
 
 ---
 
