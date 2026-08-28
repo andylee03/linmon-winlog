@@ -15,7 +15,7 @@ set -eu
 DIR="${LINMON_DIR:-/data/linmon}"
 NEED_YES=0
 KEEP_IMAGES=0
-KEEP_KEY=0
+KEEP_KEY=1
 KEEP_DIR=0
 
 usage() {
@@ -27,7 +27,8 @@ Remove LINMON server install on this host.
   --dir PATH       runtime dir (default /data/linmon)
   --yes            required (no prompt)
   --keep-images    do not docker rmi linmon / linmon-nginx / linmon-rdp-enc
-  --keep-key       keep ~/.linmon/bin_deploy
+  --keep-key       keep ~/.linmon/bin_deploy (default)
+  --wipe-key       also delete ~/.linmon/bin_deploy and ~/linmon-bin-deploy
   --keep-dir       docker compose down only; leave /data/linmon on disk
 EOF
   exit 0
@@ -39,6 +40,7 @@ while [ $# -gt 0 ]; do
     --yes|-y) NEED_YES=1 ;;
     --keep-images) KEEP_IMAGES=1 ;;
     --keep-key) KEEP_KEY=1 ;;
+    --wipe-key) KEEP_KEY=0 ;;
     --keep-dir) KEEP_DIR=1 ;;
     -h|--help) usage ;;
     *) echo "unknown arg: $1" >&2; exit 1 ;;
@@ -107,9 +109,22 @@ fi
 echo "    docker network"
 docker network rm linmon_linmon_net linmon_net 2>/dev/null || true
 
+sudo_ok=0
+if command -v sudo >/dev/null 2>&1 && sudo -n true 2>/dev/null; then
+  sudo_ok=1
+fi
+
 if [ "$KEEP_DIR" != "1" ] && [ -d "$DIR" ]; then
   echo "    rm -rf $DIR"
-  rm -rf "$DIR"
+  rm -rf "$DIR" 2>/dev/null || true
+  if [ -d "$DIR" ]; then
+    echo "    leftover root-owned files (docker wrote configs) — sudo rm"
+    if [ "$sudo_ok" = "1" ]; then
+      sudo rm -rf "$DIR"
+    else
+      echo "    run:  sudo rm -rf $DIR"
+    fi
+  fi
 fi
 
 CACHE="${HOME}/.linmon"
@@ -118,15 +133,10 @@ if [ -d "$CACHE/bin-repo" ]; then
   rm -rf "$CACHE/bin-repo"
 fi
 if [ "$KEEP_KEY" != "1" ]; then
-  rm -f "$CACHE/bin_deploy" "$CACHE/github_token"
+  rm -f "$CACHE/bin_deploy" "$CACHE/github_token" "$HOME/linmon-bin-deploy"
   echo "    removed deploy key under $CACHE (if any)"
-fi
-rm -f "$HOME/linmon-bin-deploy" 2>/dev/null || true
-
-# Linux client forwarder + hairpin iptables (needs sudo)
-sudo_ok=0
-if command -v sudo >/dev/null 2>&1 && sudo -n true 2>/dev/null; then
-  sudo_ok=1
+else
+  echo "    kept deploy key (~/.linmon/bin_deploy) for next INSTALL"
 fi
 
 remove_client() {

@@ -11,7 +11,7 @@
 | Syslog | Host LAN IP, port **514/udp** and **514/tcp** (never the website hostname) |
 | Source of binaries / images | Private GitHub `andylee03/linmon-bin` (no source code) |
 | Bootstrap script | Public `https://raw.githubusercontent.com/andylee03/linmon-winlog/main/SERVER-INSTALL.sh` |
-| Uninstall | `/data/linmon/UNINSTALL.sh` (after first install) or `cmd/linmon-bin/pack/UNINSTALL.sh` |
+| Uninstall | Public `https://raw.githubusercontent.com/andylee03/linmon-winlog/main/SERVER-UNINSTALL.sh` |
 | Office publish | `.\scripts\release-linmon-bin.ps1` on the development PC |
 
 Do not clone `andylee03/vide` onto the server. Do not copy `.env` or `configs/linmon.json` from another site.
@@ -84,6 +84,16 @@ wget -qO /tmp/SERVER-INSTALL.sh \
   https://raw.githubusercontent.com/andylee03/linmon-winlog/main/SERVER-INSTALL.sh
 bash /tmp/SERVER-INSTALL.sh --key "$HOME/linmon-bin-deploy" --dir /data/linmon
 ```
+
+Wipe this host (same public repo; not as root). `--yes` deletes the database. Deploy key is kept by default:
+
+```bash
+wget -qO /tmp/SERVER-UNINSTALL.sh \
+  https://raw.githubusercontent.com/andylee03/linmon-winlog/main/SERVER-UNINSTALL.sh
+bash /tmp/SERVER-UNINSTALL.sh --dir /data/linmon --yes
+```
+
+If `rm` prints `Permission denied` on `configs/session.secret` (container wrote root-owned files): `sudo rm -rf /data/linmon` then INSTALL again. See §7.
 
 If the shell is in `/tmp` and the key is in the home directory, `--key ./linmon-bin-deploy` fails (`key file not found`). Use `"$HOME/linmon-bin-deploy"`.
 
@@ -473,13 +483,14 @@ bash /data/linmon/UNINSTALL.sh --dir /data/linmon --yes
 | `--yes` | Required |
 | `--keep-dir` | `compose down -v` only; leave `/data/linmon` |
 | `--keep-images` | Do not `docker rmi` linmon images |
-| `--keep-key` | Keep `~/.linmon/bin_deploy` |
+| `--keep-key` | Keep `~/.linmon/bin_deploy` (**default** — next INSTALL still works) |
+| `--wipe-key` | Also delete `~/.linmon/bin_deploy` and `~/linmon-bin-deploy` |
 
 | Check | Pass | Fail |
 |-------|------|------|
 | Containers | `docker ps -a --filter name=linmon` empty | Leftover `Restarting` — `docker rm -f linmon linmon-nginx linmon-postgres …` |
 | Ports | `ss -tuln` has no `:514` / `:80` from docker-proxy | Another service still bound |
-| Dir | `/data/linmon` gone | Permission — run as the user who owns the directory |
+| Dir | `/data/linmon` gone | `Permission denied` on `configs/session.secret` etc. — those files are **root-owned** (container). Run **`sudo rm -rf /data/linmon`** then INSTALL again. Do not `sudo bash` the uninstall script. |
 | Client | `/etc/rsyslog.d/99-linmon.conf` gone | No passwordless sudo — run the printed `sudo rm` lines |
 
 Re-install afterwards is a **new** site (empty hosts, new DB). Do not reuse another site’s `.env`.
