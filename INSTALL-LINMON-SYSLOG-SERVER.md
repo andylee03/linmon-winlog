@@ -195,12 +195,50 @@ Dashboard CPU/RAM for these kinds comes from **REST API**, not SSH. Create the a
 
 Do not put API secrets in git. Linmon server must reach the **management IP** (443 / 8443 / 8006 / 8007). Syslog is still **LAN IP:514**.
 
-| Kind | Create the user on | Host Setup User | Host Setup Password | Port |
-|------|--------------------|-----------------|---------------------|------|
-| FortiGate | FortiOS REST API Admin | API admin name (e.g. `linmon`) | API **key** (once) | **443** |
-| SMA | FortiAuthenticator **Administrator** → API Keys | `API-USER` | AMC API key | **8443** |
-| PVE | `linmon@pve` + token `linmon` | **`linmon@pve!linmon`** (full Token ID) | token secret (once) | **8006** |
-| PBS | `linmon@pbs` + token `linmon` | **`linmon@pbs!linmon`** | token secret (once) | **8007** |
+| Kind | How to create the API user | Host Setup User | Password | Port |
+|------|----------------------------|-----------------|----------|------|
+| **PVE** | **Script** (root on the node) — do not invent the user by hand | `linmon@pve!linmon` | printed secret | **8006** |
+| **PBS** | **Script** (root on PBS) — do not invent the user by hand | `linmon@pbs!linmon` | printed secret | **8007** |
+| FortiGate | No script — REST API Admin GUI/CLI | e.g. `linmon` | API key | **443** |
+| SMA | No script — Administrator → API Keys | `API-USER` | AMC API key | **8443** |
+
+### PVE / PBS — public scripts (canonical)
+
+Same public repo as `SERVER-INSTALL.sh` (no GitHub token). Run as **root on the Proxmox / PBS box**, not on the linmon server.
+
+**PVE:**
+
+```bash
+wget -qO /tmp/install-pve-linmon-api.sh \
+  https://raw.githubusercontent.com/andylee03/linmon-winlog/main/install-pve-linmon-api.sh
+bash /tmp/install-pve-linmon-api.sh
+```
+
+Creates `linmon@pve` + token `linmon`, role **PVEAuditor**. Prints Token ID + secret **once**.  
+Host Setup → **+ PVE**: Port **8006**, User **`linmon@pve!linmon`**, Password = that secret.
+
+**PBS:**
+
+```bash
+wget -qO /tmp/install-pbs-linmon-api.sh \
+  https://raw.githubusercontent.com/andylee03/linmon-winlog/main/install-pbs-linmon-api.sh
+bash /tmp/install-pbs-linmon-api.sh
+```
+
+Creates `linmon@pbs` + token `linmon`, ACL **Audit** `/` + **DatastoreAudit** `/datastore` on **user and token**.  
+Host Setup → **+ PBS**: Port **8007**, User **`linmon@pbs!linmon`**, Password = that secret.
+
+```bash
+bash /tmp/install-pve-linmon-api.sh --recreate   # new PVE secret
+bash /tmp/install-pbs-linmon-api.sh --recreate   # new PBS secret
+```
+
+Office copies (same files): `scripts/install-pve-linmon-api.sh`, `scripts/install-pbs-linmon-api.sh`.
+
+| Check | Pass | Fail |
+|-------|------|------|
+| Script | prints `Host Setup → + PVE/PBS` and a secret | `pveum` / `proxmox-backup-manager` not found — wrong machine |
+| Card | CPU/RAM after poll | 401 — User is not the **full** `user@realm!tokenid`; PBS token ACL missing |
 
 ### FortiGate (REST API Admin)
 
@@ -252,45 +290,7 @@ Linmon sends header `X-API-Key`. Syslog hostname is often **`SMAHK`**, not the H
 |-------|------|------|
 | Card | CPU/RAM + user count | 401 — key from wrong menu; timeout — :8443 not reachable from linmon |
 
-### PVE (Proxmox VE)
-
-Run **as root on the Proxmox node** (creates `linmon@pve!linmon`, role **PVEAuditor**):
-
-```bash
-wget -qO /tmp/install-pve-linmon-api.sh \
-  https://raw.githubusercontent.com/andylee03/linmon-winlog/main/install-pve-linmon-api.sh
-bash /tmp/install-pve-linmon-api.sh
-```
-
-Secret is printed **once**. **Host Setup → + PVE**: Port **8006**, User = **full Token ID** `linmon@pve!linmon` (not `root@pam!linmon` unless you made that), Password = secret.
-
-`--recreate` deletes the old token and prints a new secret.
-
-GUI: **Datacenter → Permissions → Users** (`linmon@pve`) → **API Tokens** → Add (`linmon`, Privilege Separation **off**). ACL: **PVEAuditor** on `/`.
-
-| Check | Pass | Fail |
-|-------|------|------|
-| Card | version + VM list / CPU RAM | 401 — User field is not `user@realm!tokenid`; wrong secret |
-
-### PBS (Proxmox Backup Server)
-
-Run **as root on the PBS host**:
-
-```bash
-wget -qO /tmp/install-pbs-linmon-api.sh \
-  https://raw.githubusercontent.com/andylee03/linmon-winlog/main/install-pbs-linmon-api.sh
-bash /tmp/install-pbs-linmon-api.sh
-```
-
-**Host Setup → + PBS**: Port **8007**, User **`linmon@pbs!linmon`**, Password = secret.
-
-The script grants **Audit** on `/` and **DatastoreAudit** on `/datastore` to **both** the user and the token (PBS intersects them).
-
-GUI: **Configuration → Access Control → User Management** + **API Tokens**. Same ACLs on the token id.
-
-| Check | Pass | Fail |
-|-------|------|------|
-| Card | PBS version / datastore | 401 — token ACL missing (user ACL alone is not enough) |
+If the PVE/PBS script is unavailable, GUI fallback is in the script comments (`Datacenter → Permissions → API Tokens` / PBS **Access Control**). Prefer the wget.
 
 ---
 
