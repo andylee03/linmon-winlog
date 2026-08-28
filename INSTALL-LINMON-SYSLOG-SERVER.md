@@ -9,13 +9,13 @@
 | Runtime directory | `/data/linmon` |
 | Web | HTTP `:80` until TLS certificates are installed; then HTTPS `:443` |
 | Syslog | Host LAN IP, port **514/udp** and **514/tcp** (never the website hostname) |
-| Source of binaries / images | Private GitHub `andylee03/linmon-bin` (no source code) |
-| Bootstrap script | Public `https://raw.githubusercontent.com/andylee03/linmon-winlog/main/SERVER-INSTALL.sh` |
-| Update | Public `https://raw.githubusercontent.com/andylee03/linmon-winlog/main/SERVER-UPDATE.sh` (not Linux-client `UPDATE.sh`) |
-| Uninstall | Public `https://raw.githubusercontent.com/andylee03/linmon-winlog/main/SERVER-UNINSTALL.sh` |
-| Office publish | `.\scripts\release-linmon-bin.ps1` on the development PC |
+| Source of binaries / images | **GitHub only** — private `andylee03/linmon-bin` (no source). Never scp / USB bins from the office PC |
+| Bootstrap | `wget` public `https://raw.githubusercontent.com/andylee03/linmon-winlog/main/SERVER-INSTALL.sh` |
+| Update | `wget` public `…/SERVER-UPDATE.sh` (not Linux-client `UPDATE.sh`) |
+| Uninstall | `wget` public `…/SERVER-UNINSTALL.sh` |
+| Publish pack | GitHub Action `release-linmon-bin` on `vide` `main` (secret `PACK_GITHUB_TOKEN`) |
 
-Do not clone `andylee03/vide` onto the server. Do not copy `.env` or `configs/linmon.json` from another site.
+Do not clone `andylee03/vide` onto the server. Do not copy `.env` or `configs/linmon.json` from another site. Do not copy `dist\` from the office PC onto the server.
 
 ---
 
@@ -36,7 +36,7 @@ Public Linux client installer (`linmon-winlog` `INSTALL.sh`) does not use a key.
 | File type | First line `-----BEGIN OPENSSH PRIVATE KEY-----`, ~400 bytes | `.pub` file; PEM password blob; `id_ed25519` |
 | Git clone | `git@github.com:andylee03/linmon-bin.git` succeeds with this key | `Permission denied (publickey)` — wrong key |
 
-Copy **only** `linmon-bin-deploy` to the new host (for example `~/linmon-bin-deploy`). Mode `600`.
+Put **only** that private key on the new host (`~/linmon-bin-deploy`, mode `600`). After first INSTALL it lives at `~/.linmon/bin_deploy`. Packs always come from GitHub after that.
 
 ---
 
@@ -105,7 +105,7 @@ The script clones `andylee03/linmon-bin` (image tarball, compose files, `linmon`
 | `wget` | `/tmp/SERVER-INSTALL.sh` starts with `#!/bin/bash` | HTTP 404 — bootstrap not on `linmon-winlog` |
 | Key | Log line `wrote …/.linmon/bin_deploy` | `key file not found: ./linmon-bin-deploy` — file is not in the current directory; use `$HOME/linmon-bin-deploy` |
 | Clone | `Cloning into` `andylee03/linmon-bin` | `Permission denied (publickey)` — not `linmon-bin-deploy` |
-| Images | `Loaded image: linmon:latest` (and nginx / rdp-enc) | `linmon-images.tgz missing` — office must run `release-linmon-bin.ps1` |
+| Images | `Loaded image: linmon:latest` (and nginx / rdp-enc) | `linmon-images.tgz missing` — `linmon-bin` GitHub pack is incomplete; wait for Action `release-linmon-bin` |
 | Compose | Containers `Up` / `healthy` | `do not run as root`; `docker not usable`; **`linmon is unhealthy`** — see below |
 
 If compose prints **`dependency failed to start: container linmon is unhealthy`**, do not re-clone. Inspect and fix, then start again:
@@ -145,7 +145,7 @@ curl -sS http://127.0.0.1/api/version
 Pass (example):
 
 ```text
-{"version":"1.4.95","commit":"705def0","build_time":"…","go_version":"…","display":"v1.4.95 · 705def0"}
+{"version":"1.4.98","commit":"7ea0b2b","build_time":"…","go_version":"…","display":"v1.4.98 · 7ea0b2b"}
 ```
 
 `docker ps` should list `linmon`, `linmon-postgres`, `linmon-nginx`, `linmon-collect-log`, and typically `linmon-guacd`, `linmon-rdp-enc`.
@@ -176,7 +176,7 @@ bash /tmp/SERVER-UPDATE.sh --dir /data/linmon
 curl -sS http://127.0.0.1/api/version
 ```
 
-`--key` only if `~/.linmon/bin_deploy` is missing. On-disk `bash /data/linmon/UPDATE.sh` still works after the scripts have been refreshed.
+Always **wget a fresh `SERVER-UPDATE.sh` from GitHub**. Do not scp binaries from the office PC. Do not rely on an old `/data/linmon/UPDATE.sh` (sparse-checkout bug). `--key` only if `~/.linmon/bin_deploy` is missing.
 
 | Check | Pass | Fail |
 |-------|------|------|
@@ -184,23 +184,9 @@ curl -sS http://127.0.0.1/api/version
 | Clone | `andylee03/linmon-bin`; then `docker cp` | `Permission denied (publickey)` — restore `--key` |
 | | | `linmon is not running` — INSTALL first |
 | | | `git: command not found` — `sudo apt-get install -y git` |
-| API | JSON `version` matches latest `release-linmon-bin.ps1` | Old commit — clone failed; leftover `/data/linmon/UPDATE.sh` used sparse |
+| API | JSON `version` matches **GitHub** `linmon-bin` `VERSION` | Old commit — clone failed |
 
-Office (or GitHub Action `release-linmon-bin` on `vide` `main`):
-
-**Invariant:** private **`andylee03/linmon-bin` `main` is always the latest pack.** `SERVER-UPDATE.sh` clones that repo. Do not leave `vide` ahead of `linmon-bin`.
-
-After any linmon / collect-log / INSTALL scripts / `linmon.example.json` change:
-
-1. Bump `internal/linmon/version.go`
-2. `git push origin main`
-3. `.\scripts\release-linmon-bin.ps1` (Linux: `bash scripts/release-linmon-bin.sh`) unless the Action already pushed
-
-```powershell
-.\scripts\release-linmon-bin.ps1
-```
-
-Pass: `pushed main` on `andylee03/linmon-bin`; `VERSION` / `/api/version` match. GitHub Actions needs secret **`PACK_GITHUB_TOKEN`** (PAT with write to `linmon-bin` + `linmon-winlog`). Until that secret exists, always run the office script.
+**Invariant:** `andylee03/linmon-bin` **`main` is the pack servers clone.** Developers push `vide` `main`; Action `release-linmon-bin` publishes the pack (repo secret `PACK_GITHUB_TOKEN`). Servers never pull from the office disk.
 
 ---
 
@@ -660,21 +646,11 @@ Re-install afterwards is a **new** site (empty hosts, new DB). Do not reuse anot
 
 ---
 
-## Appendix A — USB when GitHub is unreachable
+## Appendix A — USB only if GitHub is unreachable
 
-Office: `.\scripts\pack-linmon-server.ps1` and `.\scripts\release-linmon-bin.ps1`. Copy:
+Normal path is **wget + git clone from GitHub**. USB is emergency only. Do not copy `linmon.json`, `.env`, `certs/`, or `id_ed25519` from another site.
 
-- `D:\vide\dist\linmon-server\` (includes `linmon-images.tgz` ~91 MB)
-- `D:\vide\dist\linmon-bin\` including `linmon-bin-deploy`
-
-On the host:
-
-```bash
-bash /tmp/linmon-server/INSTALL.sh --dir /data/linmon
-bash /tmp/linmon-bin/INSTALL.sh --key /tmp/linmon-bin/linmon-bin-deploy --dir /data/linmon
-```
-
-Do not copy `linmon.json`, `.env`, `certs/`, or `id_ed25519` from 3.200.
+If GitHub is down: a maintainer publishes `linmon-bin` on GitHub when it is back; then INSTALL/UPDATE from GitHub. Do not keep using a USB pack as the update source.
 
 ---
 
@@ -684,5 +660,18 @@ Do not copy `linmon.json`, `.env`, `certs/`, or `id_ed25519` from 3.200.
 |------------|--------|
 | `sudo bash SERVER-INSTALL.sh` / `INSTALL.sh` / `UNINSTALL.sh` | Process must use the docker group socket |
 | Client `--host` = this server’s LAN IP, run **on** this server | Hairpin NAT; syslog never reaches the container |
-| `git pull` of `vide` on the server | Source remains on the office PC |
+| `git pull` of `vide` on the server | Source stays on GitHub `vide`; servers clone **`linmon-bin` only** |
+| scp / USB binaries from the office PC | INSTALL / UPDATE are **wget + git from GitHub** |
 | Reuse another site’s `.env` / `linmon.json` | `LINMON_SECRET_KEY` is per host |
+
+---
+
+## Appendix C — Maintainers: publish pack to GitHub
+
+Servers do **not** run this. After changing linmon / collect-log / INSTALL scripts:
+
+1. Bump `internal/linmon/version.go`
+2. `git push origin main` on **`andylee03/vide`**
+3. GitHub Action **`release-linmon-bin`** builds linux bins and pushes **`andylee03/linmon-bin`** + public wget scripts on **`linmon-winlog`**
+
+Repo secret **`PACK_GITHUB_TOKEN`**: PAT with write to `andylee03/linmon-bin` and `andylee03/linmon-winlog`. Without it the Action skips; a maintainer may run `bash scripts/release-linmon-bin.sh` (or `.ps1`) **to GitHub**, never to copy files onto syslog hosts.

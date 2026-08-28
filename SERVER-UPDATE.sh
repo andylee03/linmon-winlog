@@ -8,6 +8,7 @@
 #   bash /tmp/SERVER-UPDATE.sh --dir /data/linmon
 #
 # Uses ~/.linmon/bin_deploy from first INSTALL. Optional: --key ./linmon-bin-deploy
+# Always wget this file from GitHub. Do not scp binaries from the office PC.
 set -eu
 BIN_REPO="${LINMON_BIN_REPO:-andylee03/linmon-bin}"
 KEY=""
