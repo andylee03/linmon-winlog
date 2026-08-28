@@ -11,6 +11,7 @@
 | Syslog | Host LAN IP, port **514/udp** and **514/tcp** (never the website hostname) |
 | Source of binaries / images | Private GitHub `andylee03/linmon-bin` (no source code) |
 | Bootstrap script | Public `https://raw.githubusercontent.com/andylee03/linmon-winlog/main/SERVER-INSTALL.sh` |
+| Uninstall | `/data/linmon/UNINSTALL.sh` (after first install) or `cmd/linmon-bin/pack/UNINSTALL.sh` |
 | Office publish | `.\scripts\release-linmon-bin.ps1` on the development PC |
 
 Do not clone `andylee03/vide` onto the server. Do not copy `.env` or `configs/linmon.json` from another site.
@@ -94,7 +95,34 @@ The script clones `andylee03/linmon-bin` (image tarball, compose files, `linmon`
 | Key | Log line `wrote …/.linmon/bin_deploy` | `key file not found: ./linmon-bin-deploy` — file is not in the current directory; use `$HOME/linmon-bin-deploy` |
 | Clone | `Cloning into` `andylee03/linmon-bin` | `Permission denied (publickey)` — not `linmon-bin-deploy` |
 | Images | `Loaded image: linmon:latest` (and nginx / rdp-enc) | `linmon-images.tgz missing` — office must run `release-linmon-bin.ps1` |
-| Compose | Containers `Up` / `healthy` | `do not run as root`; `docker not usable` |
+| Compose | Containers `Up` / `healthy` | `do not run as root`; `docker not usable`; **`linmon is unhealthy`** — see below |
+
+If compose prints **`dependency failed to start: container linmon is unhealthy`**, do not re-clone. Inspect and fix, then start again:
+
+```bash
+docker logs linmon --tail 80
+docker ps -a --filter name=linmon
+ls -l /data/linmon/configs/linmon.json /data/linmon/.env
+ss -tulnp | grep -E ':514|:80 '
+```
+
+| Log / symptom | Cause | Fix |
+|---------------|--------|-----|
+| `load config … no such file` | `configs/linmon.json` missing | `cp /data/linmon/configs/linmon.example.json /data/linmon/configs/linmon.json` |
+| `Bind for 0.0.0.0:514 failed` / `port is already allocated` | Host **rsyslog** (or another syslog) already owns UDP/TCP 514 | `sudo ss -ulnp \| grep 514` then stop that listener (often `sudo systemctl stop rsyslog`) **or** disable `imudp`/`imtcp` in `/etc/rsyslog.conf`, then `cd /data/linmon && bash scripts/dc.sh up -d` |
+| `address already in use` on `:80` | Another web server | Stop it or set `WEB_PORT` in `.env` |
+| Process running but `/healthz` fails | Binary not listening yet | `docker logs -f linmon`; wait; `curl -sS http://127.0.0.1:8080/healthz` is not on the host — use `docker exec linmon curl -fsS http://127.0.0.1:8080/healthz` |
+
+Then:
+
+```bash
+cd /data/linmon
+bash scripts/dc.sh up -d
+docker ps
+curl -sS http://127.0.0.1/api/version
+```
+
+Postgres volume is already created — this does **not** wipe the database.
 | API | JSON from `/api/version` (see below) | `curl: (7) Failed to connect` — `docker ps`, `docker logs linmon-nginx --tail 50` |
 | nginx TLS | First boot uses HTTP (`ENABLE_HTTPS=0`) | nginx exits: `ENABLE_HTTPS=1 but … pem missing` |
 
@@ -142,31 +170,319 @@ Pass: `pushed main` on `andylee03/linmon-bin`.
 
 Change the example web password on first login. Use **Host Setup** and **Syslog Setup** for this site only.
 
-TLS: install `/data/linmon/certs/fullchain.pem` and `privkey.pem`, set `ENABLE_HTTPS=1` in `/data/linmon/.env`, then:
+---
+
+## 5a. HTTPS (port 443)
+
+**Default after INSTALL is HTTP `:80`.** Compose already publishes **443** on the host, but nginx stays HTTP-only until **both** certificate files exist **and** `.env` has `ENABLE_HTTPS=1`. INSTALL forces `ENABLE_HTTPS=0` when `certs/` is empty so nginx does not exit.
+
+Syslog stays **514/udp + 514/tcp** on the LAN IP. TLS is **only** for the browser UI. Do not point rsyslog / Winlog at the HTTPS hostname.
+
+Do **not** copy `.env`, `linmon.json`, or `certs/` from another site (3.200 / 11.4). Each host needs its own files.
+
+### Files (exact names)
+
+| Host path | Role |
+|-----------|------|
+| `/data/linmon/certs/fullchain.pem` | Certificate + chain (PEM) |
+| `/data/linmon/certs/privkey.pem` | Private key (PEM, unencrypted) |
+| `/data/linmon/.env` | `ENABLE_HTTPS=1` · `HTTPS_PORT=443` · `WEB_PORT=80` · `LINMON_TLS_DIR=./certs` |
+
+Other filenames (`cert.pem`, `key.pem`, Let’s Encrypt live paths) are **not** read. Copy or symlink into those two names.
+
+```bash
+sudo mkdir -p /data/linmon/certs
+# then copy/symlink fullchain.pem + privkey.pem
+ls -l /data/linmon/certs/fullchain.pem /data/linmon/certs/privkey.pem
+```
+
+| Check | Pass | Fail |
+|-------|------|------|
+| Names | Both files exist under `/data/linmon/certs/` | nginx log: `ENABLE_HTTPS=1 but … pem missing` → container exits |
+| Key | `openssl rsa -in /data/linmon/certs/privkey.pem -check -noout` | Encrypted key / wrong file |
+| Chain | `openssl x509 -in /data/linmon/certs/fullchain.pem -noout -subject -dates` | Empty or DER binary |
+
+### Option A — Cloudflare Origin CA (PEM) + DNS
+
+Browsers talk **HTTPS to Cloudflare**. This host is the **origin**. Put Cloudflare’s **Origin Certificate + private key** in `certs/` and set `ENABLE_HTTPS=1`. Do **not** use a Let’s Encrypt cert on origin if Cloudflare is already terminating TLS (Origin CA is enough).
+
+**Need a public path to this machine’s :443.** LAN-only syslog-4 (`192.168.21.4` with no NAT / no tunnel) cannot use orange-cloud. Either:
+
+- public IP (or WAN NAT **443/tcp** to this host), or
+- **Cloudflare Tunnel** (`cloudflared`) if there is no inbound 443
+
+Syslog **514 must stay LAN-only**. Do not publish 514 through Cloudflare.
+
+#### A1. DNS
+
+Cloudflare dashboard → **DNS → Records**:
+
+| Type | Name | Content | Proxy |
+|------|------|---------|-------|
+| A (or AAAA) | e.g. `syslog-4` (or `@`) | **Public** IPv4/IPv6 of this origin (or tunnel CNAME later) | **Proxied** (orange cloud) |
+
+Wait until `dig +short syslog-4.example.com` returns a **Cloudflare** anycast IP (not the LAN IP).
+
+#### A2. SSL / TLS mode
+
+**SSL/TLS → Overview → encryption mode: Full (strict).**
+
+| Mode | Use |
+|------|-----|
+| **Full (strict)** | Required with Origin CA PEM on this host |
+| Full | Works with self-signed; weaker |
+| Flexible | Cloudflare → origin **HTTP :80**. Do **not** use if you installed PEM / `ENABLE_HTTPS=1` |
+
+#### A3. Create Origin Certificate (PEM)
+
+1. **SSL/TLS → Origin Server → Create Certificate**.
+2. Hostnames: the DNS name(s) from A1 (e.g. `syslog-4.example.com` and `*.example.com` if needed).
+3. Key type **RSA (2048)**. Validity **15 years** is fine.
+4. **Create**.
+5. Copy **Origin Certificate** (block starts `-----BEGIN CERTIFICATE-----`) — this is shown again later, but save it.
+6. Copy **Private Key** (block starts `-----BEGIN PRIVATE KEY-----`) — **shown once**. If lost, create a new certificate.
+
+On the linmon host (example `syslog-4`):
+
+```bash
+sudo mkdir -p /data/linmon/certs
+sudo nano /data/linmon/certs/fullchain.pem   # paste Origin Certificate, save
+sudo nano /data/linmon/certs/privkey.pem     # paste Private Key, save
+sudo chmod 600 /data/linmon/certs/privkey.pem
+sudo chown "$USER:$USER" /data/linmon/certs/*.pem
+openssl x509 -in /data/linmon/certs/fullchain.pem -noout -issuer -subject -dates
+openssl rsa -in /data/linmon/certs/privkey.pem -check -noout
+```
+
+Pass: issuer contains **Cloudflare Origin CA**; `rsa: OK`.  
+You do **not** need Cloudflare’s universal “edge” cert on this box. Do **not** copy 3.200 `certs/` (that name is `syslog.athenabest.com`).
+
+Then **Turn HTTPS on** below (`ENABLE_HTTPS=1`, recreate nginx).
+
+#### A4. Firewall / Cloudflare
+
+- Origin **443/tcp** reachable from Cloudflare (or tunnel). Keep **80/tcp** for HTTP 301 + `/healthz`.
+- Restrict origin 443 to [Cloudflare IP ranges](https://www.cloudflare.com/ips/) if the host is on the internet.
+- **Do not** open **514** to the internet.
+
+#### A5. LINMON settings behind Cloudflare
+
+In **MENU → Settings** (after login):
+
+- **Local admin internal-only**: leave **off** on a Cloudflare site, **or** run **v1.4.79+** (nginx passes `CF-Ray`; the gate skips when that header is present).
+- Login URL is `https://<cloudflare-hostname>/` — not `http://192.168.21.4/`.
+- Syslog devices and Linux/Winlog clients still use the **LAN IP** (`192.168.21.4`), never the Cloudflare hostname.
+
+| Check | Pass | Fail |
+|-------|------|------|
+| Browser via CF | Padlock, LINMON login, no certificate warning | 526 — origin cert missing / `ENABLE_HTTPS=0` / mode not Full (strict) |
+| | | 522 — origin :443 not reachable (NAT / firewall / no tunnel) |
+| Direct LAN | `https://192.168.21.4/` may warn (cert CN is the DNS name) | Expected; use the Cloudflare hostname for browsers |
+| Login | Local `admin` works from the internet | Internal-only on + old build without `CF-Ray` |
+
+### Option B — self-signed (LAN IP, browser warning)
+
+For syslog-4-style hosts with no public name (`http://192.168.21.4/`). Browsers will warn; that is expected.
+
+Replace the IP (and optional DNS) in `-addext`:
+
+```bash
+cd /data/linmon/certs
+openssl req -x509 -newkey rsa:2048 -sha256 -days 825 -nodes \
+  -keyout privkey.pem -out fullchain.pem \
+  -subj "/CN=192.168.21.4" \
+  -addext "subjectAltName=IP:192.168.21.4"
+chmod 600 privkey.pem
+```
+
+### Turn HTTPS on
+
+```bash
+# in /data/linmon/.env  (do not copy another site's .env)
+# ENABLE_HTTPS=1
+# HTTPS_PORT=443
+# WEB_PORT=80
+
+grep -E '^(ENABLE_HTTPS|WEB_PORT|HTTPS_PORT|LINMON_TLS_DIR)=' /data/linmon/.env
+cd /data/linmon
+bash scripts/dc.sh up -d --force-recreate nginx
+docker logs linmon-nginx --tail 20
+```
+
+Expect a log line: `TLS only (443). HTTP :80 redirects to HTTPS.`
+
+If `scripts/dc.sh` is missing:
 
 ```bash
 cd /data/linmon
-bash scripts/dc.sh up -d
-curl -skS https://127.0.0.1/api/version
+docker compose --env-file .env -f docker-compose.yml up -d --force-recreate nginx
 ```
 
-Pass: JSON on HTTPS; HTTP to the same host returns **301**. Fail: nginx missing those exact certificate filenames.
+Firewall: **443/tcp** (and keep **80/tcp** — HTTP is 301 + Docker `/healthz` `/readyz`, not the app).
+
+### Verify
+
+```bash
+curl -skS https://127.0.0.1/api/version
+curl -sS -o /dev/null -w "http=%{http_code} redirect=%{redirect_url}\n" http://127.0.0.1/
+curl -skS -o /dev/null -w "https=%{http_code}\n" https://127.0.0.1/
+docker ps --filter name=linmon-nginx
+```
+
+| Check | Pass | Fail |
+|-------|------|------|
+| API | JSON on **https://** (`/api/version`) | `Failed to connect` :443 — recreate nginx; `ss -tlnp \| grep 443` |
+| HTTP | **301** to `https://…` | 200 on HTTP — `ENABLE_HTTPS` still `0` or nginx not recreated |
+| nginx | `Up` / `healthy` | Restarting — missing PEM names, or `ENABLE_HTTPS=1` before files exist |
+| Browser | `https://<LAN-IP>/` or `https://<DNS>/` | Self-signed: accept the warning once |
+
+To go back to HTTP only: set `ENABLE_HTTPS=0`, recreate nginx. Leave cert files in place.
 
 ---
 
 ## 6. Linux client (sends logs to this server)
 
-Run on **another** host, not on the syslog server’s own LAN IP (Docker hairpin drops those packets).
+Public installer (no GitHub token, **not** PowerShell):  
+https://raw.githubusercontent.com/andylee03/linmon-winlog/main/INSTALL.sh  
+Guide: `docs/INSTALL-LINUX-HOST-CLIENT.md`.
+
+`--host` is always a **syslog IP**, never `https://…` and never the Cloudflare name.
+
+| Where you run INSTALL | `--host` | `--proto` |
+|-----------------------|----------|-----------|
+| **Another** Linux PC on the same LAN as syslog-4 | `192.168.21.4` | `udp` (VPN/NAT: `tcp`) |
+| **On syslog-4 itself** (this Docker host) | `172.16.0.20` | **`tcp`** |
+| Another Linux → HK prod | `192.168.3.200` | `udp` |
+| Another Linux → SG 11.4 | `192.168.11.4` | `udp` |
+
+**Never** on syslog-4: `--host 192.168.21.4` (Docker hairpin — packets never reach the `linmon` container). Same rule as 3.200 / 11.4.
+
+Look in the UI under **Logs → linux (error)** (`linux_error`). Filter **linux** is SSH poll, not rsyslog.
+
+### 6a. Other Linux PCs → syslog-4
+
+Run **on the client**, not on 21.4:
 
 ```bash
 wget -qO /tmp/INSTALL.sh \
   https://raw.githubusercontent.com/andylee03/linmon-winlog/main/INSTALL.sh
-sudo bash /tmp/INSTALL.sh --host <SERVER-LAN-IP> --port 514 --proto udp --min err
+sudo bash /tmp/INSTALL.sh --host 192.168.21.4 --port 514 --proto udp --min err
 logger -p user.err 'linmon-syslog-test from this host'
 ```
 
-Pass: `/etc/rsyslog.d/99-linmon.conf` exists; server UI **Logs → linux (error)** shows the client hostname.  
-Fail: no row — check 514/udp, `--host` is the LAN IP, and the log type is **linux (error)** (not `linux`, which is SSH poll).
+| Check | Pass | Fail |
+|-------|------|------|
+| Conf | `/etc/rsyslog.d/99-linmon.conf` has `@192.168.21.4:514` | `--host` was a website name |
+| UI | **linux (error)** row, hostname = this client | No row — 514/udp blocked; or you looked at **linux** (poll) |
+
+### 6b. Linux client **on syslog-4** (this machine)
+
+syslog-4 is the **server**. Host rsyslog must send to the **container** `172.16.0.20:514` over **TCP** (`@@`). UDP to the published LAN `:514` is dropped (hairpin).
+
+```bash
+wget -qO /tmp/INSTALL.sh \
+  https://raw.githubusercontent.com/andylee03/linmon-winlog/main/INSTALL.sh
+sudo bash /tmp/INSTALL.sh --host 172.16.0.20 --port 514 --proto tcp --min err
+```
+
+Confirm:
+
+```bash
+grep -E '@' /etc/rsyslog.d/99-linmon.conf
+# pass:  @@172.16.0.20:514     (two @ = TCP)
+# fail:  @192.168.21.4:514     (hairpin)
+```
+
+If a previous INSTALL used the LAN IP, fix in place (do not re-INSTALL with the wrong host):
+
+```bash
+sudo sed -i 's/@192.168.21.4:514/@@172.16.0.20:514/' /etc/rsyslog.d/99-linmon.conf
+sudo systemctl restart rsyslog
+```
+
+Allow host → container 514 (Docker `DOCKER-USER`):
+
+```bash
+sudo tee /usr/local/sbin/linmon-host-syslog-iptables.sh >/dev/null <<'EOF'
+#!/bin/sh
+iptables -C DOCKER-USER -p tcp -d 172.16.0.20 --dport 514 -j ACCEPT 2>/dev/null \
+  || iptables -I DOCKER-USER -p tcp -d 172.16.0.20 --dport 514 -j ACCEPT
+iptables -C DOCKER-USER -p udp -d 172.16.0.20 --dport 514 -j ACCEPT 2>/dev/null \
+  || iptables -I DOCKER-USER -p udp -d 172.16.0.20 --dport 514 -j ACCEPT
+EOF
+sudo chmod 755 /usr/local/sbin/linmon-host-syslog-iptables.sh
+sudo /usr/local/sbin/linmon-host-syslog-iptables.sh
+
+sudo tee /etc/systemd/system/linmon-host-syslog-iptables.service >/dev/null <<'EOF'
+[Unit]
+Description=Allow host rsyslog to linmon container :514
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/linmon-host-syslog-iptables.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+EOF
+sudo systemctl daemon-reload
+sudo systemctl enable --now linmon-host-syslog-iptables.service
+```
+
+Test (on syslog-4):
+
+```bash
+logger -p user.err 'linmon-syslog-test from syslog-4 host'
+# UI → Logs → linux (error)  hostname = this box (e.g. metis)
+```
+
+| Check | Pass | Fail |
+|-------|------|------|
+| Conf | `@@172.16.0.20:514` | `@192.168.21.4` — no rows in UI |
+| iptables | `iptables -L DOCKER-USER -n` shows ACCEPT dport 514 to `172.16.0.20` | Rule missing after reboot — enable the systemd unit |
+| UI | **linux (error)** | Looking at **linux** (SSH collect) |
+
+FortiGate / QNAP / other PCs still send to **`192.168.21.4:514`**. Only the **linmon host itself** uses `172.16.0.20`.
+
+---
+
+## 7. Uninstall (wipe this host)
+
+Removes the Docker stack, `/data/linmon` (including Postgres volume), image tags `linmon` / `linmon-nginx` / `linmon-rdp-enc`, git cache `~/.linmon/bin-repo`, the Linux-client rsyslog drop-in, and the host→container iptables unit. **Does not** remove Docker Engine.
+
+Do **not** run as root. **`--yes` is required.** This deletes the database.
+
+On the host (syslog-4 example: user `metis`). Same public wget as INSTALL — **not** as root:
+
+```bash
+wget -qO /tmp/SERVER-UNINSTALL.sh \
+  https://raw.githubusercontent.com/andylee03/linmon-winlog/main/SERVER-UNINSTALL.sh
+bash /tmp/SERVER-UNINSTALL.sh --dir /data/linmon --yes
+```
+
+If INSTALL already copied the pack script:
+
+```bash
+bash /data/linmon/UNINSTALL.sh --dir /data/linmon --yes
+```
+
+| Flag | Meaning |
+|------|---------|
+| `--yes` | Required |
+| `--keep-dir` | `compose down -v` only; leave `/data/linmon` |
+| `--keep-images` | Do not `docker rmi` linmon images |
+| `--keep-key` | Keep `~/.linmon/bin_deploy` |
+
+| Check | Pass | Fail |
+|-------|------|------|
+| Containers | `docker ps -a --filter name=linmon` empty | Leftover `Restarting` — `docker rm -f linmon linmon-nginx linmon-postgres …` |
+| Ports | `ss -tuln` has no `:514` / `:80` from docker-proxy | Another service still bound |
+| Dir | `/data/linmon` gone | Permission — run as the user who owns the directory |
+| Client | `/etc/rsyslog.d/99-linmon.conf` gone | No passwordless sudo — run the printed `sudo rm` lines |
+
+Re-install afterwards is a **new** site (empty hosts, new DB). Do not reuse another site’s `.env`.
 
 ---
 
@@ -192,7 +508,7 @@ Do not copy `linmon.json`, `.env`, `certs/`, or `id_ed25519` from 3.200.
 
 | Prohibited | Reason |
 |------------|--------|
-| `sudo bash SERVER-INSTALL.sh` / `INSTALL.sh` | Process must use the docker group socket |
+| `sudo bash SERVER-INSTALL.sh` / `INSTALL.sh` / `UNINSTALL.sh` | Process must use the docker group socket |
 | Client `--host` = this server’s LAN IP, run **on** this server | Hairpin NAT; syslog never reaches the container |
 | `git pull` of `vide` on the server | Source remains on the office PC |
 | Reuse another site’s `.env` / `linmon.json` | `LINMON_SECRET_KEY` is per host |
