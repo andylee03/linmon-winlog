@@ -69,8 +69,10 @@ if [ -z "$DIR" ]; then
   wd="$(docker inspect linmon --format '{{index .Config.Labels "com.docker.compose.project.working_dir"}}' 2>/dev/null || true)"
   if [ -n "$wd" ] && [ -d "$wd" ]; then
     DIR="$wd"
-  elif [ -d /data/linmon ]; then
+  elif [ -d /data/linmon ] && [ -f /data/linmon/docker-compose.yml ]; then
     DIR=/data/linmon
+  elif [ -d /mnt/data1t/linmon ] && [ -f /mnt/data1t/linmon/docker-compose.yml ]; then
+    DIR=/mnt/data1t/linmon
   elif [ -d "$HOME/vide" ] && [ -f "$HOME/vide/docker-compose.yml" ]; then
     DIR="$HOME/vide"
   else
@@ -80,7 +82,7 @@ fi
 echo "Update dir: $DIR"
 if [ ! -d "$DIR" ]; then
   echo "ERROR: runtime dir not found: $DIR" >&2
-  echo "  3.200:  bash $0 --dir /home/athenabest/vide" >&2
+  echo "  3.200:  bash $0 --dir /data/linmon   (or /home/athenabest/vide before migrate)" >&2
   echo "  11.4 / syslog-4:  bash $0 --dir /data/linmon" >&2
   exit 1
 fi

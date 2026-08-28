@@ -598,6 +598,8 @@ SSH offline: dial tcp 192.168.21.4:22: i/o timeout
 
 TCP never connected. **Do not** tick HostKey/Pubkey +ssh-rsa to fix a timeout.
 
+**Other Host Setup rows are fine** with their real LAN IPs (collect-log leaves Docker and reaches those machines). Only the **linmon box itself** cannot be `192.168.21.4` / `192.168.11.4` / `192.168.3.200`.
+
 On **syslog-4**, Host Setup Linux row for the box itself:
 
 | Field | Value |
