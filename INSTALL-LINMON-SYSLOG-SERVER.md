@@ -490,8 +490,38 @@ bash /data/linmon/UNINSTALL.sh --dir /data/linmon --yes
 |-------|------|------|
 | Containers | `docker ps -a --filter name=linmon` empty | Leftover `Restarting` — `docker rm -f linmon linmon-nginx linmon-postgres …` |
 | Ports | `ss -tuln` has no `:514` / `:80` from docker-proxy | Another service still bound |
-| Dir | `/data/linmon` gone | `Permission denied` on `configs/session.secret` etc. — those files are **root-owned** (container). Run **`sudo rm -rf /data/linmon`** then INSTALL again. Do not `sudo bash` the uninstall script. |
+| Dir | `/data/linmon` gone | See **root-owned configs** below |
 | Client | `/etc/rsyslog.d/99-linmon.conf` gone | No passwordless sudo — run the printed `sudo rm` lines |
+
+### Root-owned `configs/` after UNINSTALL
+
+Docker may leave files owned by **root**. `bash SERVER-UNINSTALL.sh` (as `metis`) then prints:
+
+```text
+rm: cannot remove '/data/linmon/configs/session.secret': Permission denied
+rm: cannot remove '/data/linmon/configs/linmon.example.json': Permission denied
+rm: cannot remove '/data/linmon/configs/rdp-record.env': Permission denied
+rm: cannot remove '/data/linmon/configs/linmon.json': Permission denied
+rm: cannot remove '/data/linmon/configs/web.env': Permission denied
+```
+
+Stack is already gone. Finish the wipe with **sudo only on rm** (do **not** `sudo bash` UNINSTALL):
+
+```bash
+sudo rm -rf /data/linmon
+ls -ld /data/linmon
+# Pass: No such file or directory
+```
+
+If it still exists:
+
+```bash
+ls -la /data/linmon/configs
+sudo chown -R "$USER:$USER" /data/linmon
+rm -rf /data/linmon
+```
+
+Then INSTALL again (not as root). Newer `SERVER-UNINSTALL.sh` tries `sudo rm` itself; if sudo asks for a password it prints the same command.
 
 Re-install afterwards is a **new** site (empty hosts, new DB). Do not reuse another site’s `.env`.
 
