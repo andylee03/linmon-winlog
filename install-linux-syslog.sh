@@ -145,12 +145,14 @@ selector() {
     echo "*.*"
     return
   fi
+  # NOTE: sshd "Failed password" is usually authpriv.info (not notice).
+  # authpriv.notice would miss SSH login failures on Ubuntu/Debian.
   case "$MIN" in
     debug) echo "*.*;auth,authpriv.none" ;;
     info|information) echo "*.info;*.notice;*.warn;*.err;*.crit;*.alert;*.emerg" ;;
-    warn|warning) echo "*.warn;*.err;*.crit;*.alert;*.emerg;auth,authpriv.notice;kern.warning" ;;
+    warn|warning) echo "*.warn;*.err;*.crit;*.alert;*.emerg;auth,authpriv.info;kern.warning" ;;
     crit|critical) echo "*.crit;*.alert;*.emerg;auth,authpriv.err" ;;
-    *) echo "*.err;*.crit;*.alert;*.emerg;auth,authpriv.notice;kern.err" ;;
+    *) echo "*.err;*.crit;*.alert;*.emerg;auth,authpriv.info;kern.err" ;;
   esac
 }
 
