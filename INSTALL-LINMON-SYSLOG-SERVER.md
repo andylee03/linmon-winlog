@@ -206,6 +206,8 @@ Always **wget a fresh `SERVER-UPDATE.sh` from GitHub**. Do not scp binaries from
 
 First web login: **`admin` / `change-me`**. Change that password immediately. Do not copy `linmon.json` from another site.
 
+**Android APK (sideload WebView):** https://github.com/andylee03/linmon-winlog/releases/download/linmon-apk-v1.4.100/linmon.apk — default `https://syslog.athenabest.com`; **long-press** to change server. Not Play Store.
+
 **MENU how-to** (Save writes; Close discards): **`docs/LINMON-ADMIN-GUIDE.md` §3b–3g**.
 
 | MENU | Use |
