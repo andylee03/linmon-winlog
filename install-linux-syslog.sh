@@ -31,13 +31,14 @@
 #   --uninstall                 remove forwarder (keeps key unless you delete it)
 #   -h / --help
 #
-# Default: UDP 192.168.3.200:514, only err/crit/alert/emerg + auth + kernel.
+# Default: UDP 192.168.3.200:514, err/crit/alert/emerg + auth/authpriv.info + kern.err.
+# authpriv.info includes sshd "Failed password" / "Invalid user" (notice alone misses them).
 # Does not dump history — only new messages after reload.
 # Last applied values are stored in /etc/linmon-syslog.conf
 
 set -eu
 
-SYSLOG_VERSION="1.0.1"
+SYSLOG_VERSION="1.0.2"
 SYSLOG_REPO="andylee03/linmon-syslog"
 LINMON_DIR="/etc/linmon"
 DEPLOY_KEY="${LINMON_DIR}/github_deploy"
