@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="220" viewBox="0 0 920 220" role="img" aria-label="LINMON login flow">
+  <rect width="920" height="220" fill="#0b1220"/>
+  <text x="24" y="36" fill="#93c5fd" font-family="Segoe UI, sans-serif" font-size="16" font-weight="700">Login flow — https://syslog.athenabest.com</text>
+  <g font-family="Segoe UI, sans-serif" font-size="13">
+    <rect x="24" y="60" width="160" height="88" rx="12" fill="#121a2b" stroke="#3b82f6"/>
+    <text x="104" y="98" text-anchor="middle" fill="#e8eefc" font-weight="700">1. Password</text>
+    <text x="104" y="120" text-anchor="middle" fill="#8b9bb8">Username + Password</text>
+    <polygon points="196,104 216,104 216,96 240,112 216,128 216,120 196,120" fill="#3b82f6"/>
+    <rect x="252" y="60" width="200" height="88" rx="12" fill="#121a2b" stroke="#1e2a44"/>
+    <text x="352" y="90" text-anchor="middle" fill="#e8eefc" font-weight="700">2. Second factor</text>
+    <text x="352" y="112" text-anchor="middle" fill="#8b9bb8">Email / Authenticator</text>
+    <text x="352" y="130" text-anchor="middle" fill="#8b9bb8">/ YubiKey (if enrolled)</text>
+    <polygon points="464,104 484,104 484,96 508,112 484,128 484,120 464,120" fill="#3b82f6"/>
+    <rect x="520" y="60" width="180" height="88" rx="12" fill="#121a2b" stroke="#1e2a44"/>
+    <text x="610" y="98" text-anchor="middle" fill="#e8eefc" font-weight="700">3. Verify</text>
+    <text x="610" y="120" text-anchor="middle" fill="#8b9bb8">6-digit or touch Yubi</text>
+    <polygon points="712,104 732,104 732,96 756,112 732,128 732,120 712,120" fill="#3b82f6"/>
+    <rect x="768" y="60" width="128" height="88" rx="12" fill="#052e16" stroke="#22c55e"/>
+    <text x="832" y="108" text-anchor="middle" fill="#bbf7d0" font-weight="700">Dashboard</text>
+  </g>
+  <text x="24" y="190" fill="#8b9bb8" font-family="Segoe UI, sans-serif" font-size="12">After Email-only success, enroll Authenticator or YubiKey before you continue.</text>
+</svg>

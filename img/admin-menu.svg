@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="240" viewBox="0 0 920 240" role="img" aria-label="Admin MENU">
+  <rect width="920" height="240" fill="#0b1220"/>
+  <text x="24" y="32" fill="#93c5fd" font-family="Segoe UI, sans-serif" font-size="16" font-weight="700">Admin MENU — https://syslog.athenabest.com</text>
+  <g font-family="Segoe UI, sans-serif" font-size="12">
+    <rect x="20" y="48" width="140" height="70" rx="10" fill="#121a2b" stroke="#3b82f6"/>
+    <text x="90" y="78" text-anchor="middle" fill="#e8eefc" font-weight="700">Settings</text>
+    <text x="90" y="98" text-anchor="middle" fill="#8b9bb8">SMTP · OTP · AD</text>
+    <rect x="172" y="48" width="140" height="70" rx="10" fill="#121a2b" stroke="#1e2a44"/>
+    <text x="242" y="78" text-anchor="middle" fill="#e8eefc" font-weight="700">User Setup</text>
+    <text x="242" y="98" text-anchor="middle" fill="#8b9bb8">Admin/RDP/SSH · TOTP</text>
+    <rect x="324" y="48" width="140" height="70" rx="10" fill="#121a2b" stroke="#1e2a44"/>
+    <text x="394" y="78" text-anchor="middle" fill="#e8eefc" font-weight="700">Host Setup</text>
+    <text x="394" y="98" text-anchor="middle" fill="#8b9bb8">Linux/Win/SMA/PVE/FG</text>
+    <rect x="476" y="48" width="140" height="70" rx="10" fill="#121a2b" stroke="#1e2a44"/>
+    <text x="546" y="78" text-anchor="middle" fill="#e8eefc" font-weight="700">Syslog Setup</text>
+    <text x="546" y="98" text-anchor="middle" fill="#8b9bb8">Name=LAN IP</text>
+    <rect x="628" y="48" width="140" height="70" rx="10" fill="#121a2b" stroke="#1e2a44"/>
+    <text x="698" y="78" text-anchor="middle" fill="#e8eefc" font-weight="700">Web / SSL</text>
+    <text x="698" y="98" text-anchor="middle" fill="#8b9bb8">Postgres websites</text>
+    <rect x="780" y="48" width="120" height="70" rx="10" fill="#121a2b" stroke="#1e2a44"/>
+    <text x="840" y="78" text-anchor="middle" fill="#e8eefc" font-weight="700">Scheduler</text>
+    <text x="840" y="98" text-anchor="middle" fill="#8b9bb8">CSV export</text>
+    <text x="24" y="150" fill="#8b9bb8">Day-to-day login / QR / mail: User Guide. This page is for settings, deploy, and adding hosts.</text>
+    <text x="24" y="178" fill="#8b9bb8">Admins: andy.lee · peter.ip · steven.khoo. Local admin can always open Settings.</text>
+    <text x="24" y="206" fill="#93c5fd">Never git add -f configs/linmon.json · never copy this .env to 11.4 or a new country.</text>
+  </g>
+</svg>

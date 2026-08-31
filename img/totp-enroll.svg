@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="280" viewBox="0 0 920 280" role="img" aria-label="TOTP enrollment">
+  <rect width="920" height="280" fill="#0b1220"/>
+  <text x="24" y="36" fill="#93c5fd" font-family="Segoe UI, sans-serif" font-size="16" font-weight="700">Enroll Authenticator (TOTP)</text>
+  <g font-family="Segoe UI, sans-serif" font-size="13">
+    <rect x="24" y="56" width="200" height="180" rx="12" fill="#121a2b" stroke="#3b82f6"/>
+    <text x="124" y="88" text-anchor="middle" fill="#e8eefc" font-weight="700">A. At login</text>
+    <text x="124" y="114" text-anchor="middle" fill="#8b9bb8">Email OTP succeeds</text>
+    <text x="124" y="134" text-anchor="middle" fill="#8b9bb8">QR is shown</text>
+    <text x="124" y="154" text-anchor="middle" fill="#8b9bb8">Scan with phone app</text>
+    <text x="124" y="174" text-anchor="middle" fill="#8b9bb8">Enter 6 digits, Confirm</text>
+    <rect x="248" y="56" width="200" height="180" rx="12" fill="#121a2b" stroke="#1e2a44"/>
+    <text x="348" y="88" text-anchor="middle" fill="#e8eefc" font-weight="700">B. Self-register</text>
+    <text x="348" y="114" text-anchor="middle" fill="#8b9bb8">MENU → Settings</text>
+    <text x="348" y="134" text-anchor="middle" fill="#8b9bb8">Register Authenticator</text>
+    <text x="348" y="154" text-anchor="middle" fill="#8b9bb8">Scan QR → 6 digits</text>
+    <rect x="472" y="56" width="200" height="180" rx="12" fill="#121a2b" stroke="#1e2a44"/>
+    <text x="572" y="88" text-anchor="middle" fill="#e8eefc" font-weight="700">C. Admin enrolls</text>
+    <text x="572" y="114" text-anchor="middle" fill="#8b9bb8">MENU → User Setup</text>
+    <text x="572" y="134" text-anchor="middle" fill="#8b9bb8">Pick the user</text>
+    <text x="572" y="154" text-anchor="middle" fill="#8b9bb8">+ Register Authenticator</text>
+    <text x="572" y="174" text-anchor="middle" fill="#8b9bb8">Confirm 6 digits</text>
+    <rect x="696" y="56" width="200" height="180" rx="12" fill="#052e16" stroke="#22c55e"/>
+    <text x="796" y="108" text-anchor="middle" fill="#bbf7d0" font-weight="700">Later logins</text>
+    <text x="796" y="134" text-anchor="middle" fill="#8b9bb8">Choose Authenticator</text>
+    <text x="796" y="154" text-anchor="middle" fill="#8b9bb8">YubiKey is independent</text>
+  </g>
+</svg>

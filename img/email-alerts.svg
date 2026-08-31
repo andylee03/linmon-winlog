@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="300" viewBox="0 0 920 300" role="img" aria-label="Email alert controls">
+  <rect width="920" height="300" fill="#0b1220"/>
+  <text x="24" y="36" fill="#93c5fd" font-family="Segoe UI, sans-serif" font-size="16" font-weight="700">How to control email alerts</text>
+  <g font-family="Segoe UI, sans-serif" font-size="13">
+    <rect x="24" y="56" width="280" height="210" rx="12" fill="#121a2b" stroke="#3b82f6"/>
+    <text x="40" y="86" fill="#e8eefc" font-weight="700">1. Enable SMTP first</text>
+    <text x="40" y="112" fill="#8b9bb8">MENU → Settings → SMTP</text>
+    <text x="40" y="134" fill="#8b9bb8">Enable email alerts</text>
+    <text x="40" y="156" fill="#8b9bb8">Host / Port 587 / From / To</text>
+    <text x="40" y="178" fill="#8b9bb8">To = disk/RAM recipients</text>
+    <text x="40" y="208" fill="#93c5fd">SMTP off = no alert mail</text>
+    <rect x="320" y="56" width="280" height="210" rx="12" fill="#121a2b" stroke="#1e2a44"/>
+    <text x="336" y="86" fill="#e8eefc" font-weight="700">2. Host disk / RAM</text>
+    <text x="336" y="112" fill="#8b9bb8">Settings → Alerts</text>
+    <text x="336" y="134" fill="#8b9bb8">Disk email when ≥ % (95)</text>
+    <text x="336" y="156" fill="#8b9bb8">RAM email when ≥ % (95)</text>
+    <text x="336" y="178" fill="#8b9bb8">RAM sustain seconds (60)</text>
+    <text x="336" y="200" fill="#8b9bb8">Cooldown minutes (60)</text>
+    <text x="336" y="230" fill="#93c5fd">Test HD email / Test RAM email</text>
+    <rect x="616" y="56" width="280" height="210" rx="12" fill="#121a2b" stroke="#1e2a44"/>
+    <text x="632" y="86" fill="#e8eefc" font-weight="700">3. Website DOWN / SSL</text>
+    <text x="632" y="112" fill="#8b9bb8">MENU → Web / SSL Setup</text>
+    <text x="632" y="134" fill="#8b9bb8">Email when website DOWN</text>
+    <text x="632" y="156" fill="#8b9bb8">Email when SSL expiring</text>
+    <text x="632" y="178" fill="#8b9bb8">Website alert email To</text>
+    <text x="632" y="200" fill="#8b9bb8">(blank = SMTP To)</text>
+    <text x="632" y="230" fill="#93c5fd">Test Email Web DOWN</text>
+  </g>
+</svg>
