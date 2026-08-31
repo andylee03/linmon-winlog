@@ -4,7 +4,7 @@
 
 https://github.com/andylee03/linmon-winlog/blob/main/INSTALL-LINUX-HOST-CLIENT.md
 
-Scripts:
+Scripts (current installer **v1.0.2+**):
 
 - https://raw.githubusercontent.com/andylee03/linmon-winlog/main/INSTALL.sh
 - https://raw.githubusercontent.com/andylee03/linmon-winlog/main/UPDATE.sh
@@ -18,6 +18,8 @@ This is **not** a linmon server install. It only configures the Linux box to **f
 |------|---------------------|----------|
 | Hong Kong | A Linux **client** (not 3.200 itself) | `192.168.3.200` |
 | Singapore | A Linux **client** (not 11.4 itself) | `192.168.11.4` |
+| syslog-4 | A Linux **client** (not 21.4 itself) | `192.168.21.4` |
+| syslog-4 **host OS** | **On** `192.168.21.4` only | `172.16.0.20` **`--proto tcp`** |
 
 Do **not** use `https://syslog.athenabest.com` or Docker `172.16.0.20` as `--host` on a **normal client**.
 
@@ -65,6 +67,12 @@ sudo bash /tmp/INSTALL.sh --host 192.168.3.200 --port 514 --proto udp --min err
 
 # Singapore linmon (run ON another Linux PC, not on 11.4)
 sudo bash /tmp/INSTALL.sh --host 192.168.11.4 --port 514 --proto udp --min err
+
+# syslog-4 LAN clients (run ON another Linux PC, not on 21.4)
+sudo bash /tmp/INSTALL.sh --host 192.168.21.4 --port 514 --proto udp --min err
+
+# ON syslog-4 itself (Docker host — never use 192.168.21.4 here)
+sudo bash /tmp/INSTALL.sh --host 172.16.0.20 --port 514 --proto tcp --min err
 ```
 
 One line (no `--setup`):
@@ -78,7 +86,9 @@ VPN/NAT: use `--proto tcp`.
 
 ---
 
-## UPDATE
+## UPDATE (public wget — preferred)
+
+Always wget a **fresh** `UPDATE.sh` from GitHub (do not reuse an old on-disk copy):
 
 ```bash
 wget -qO /tmp/UPDATE.sh \
@@ -93,6 +103,30 @@ wget -qO- https://raw.githubusercontent.com/andylee03/linmon-winlog/main/UPDATE.
 ```
 
 Re-downloads `install-linux-syslog.sh` and applies the saved `/etc/linmon-syslog.conf`.
+
+### If UPDATE fails: `error in libcrypto` / `Permission denied (publickey)`
+
+Public `UPDATE.sh` calls `--update` when `/etc/linmon/github_deploy` (or token) exists. A **corrupt** deploy key produces:
+
+```text
+Load key "/etc/linmon/github_deploy": error in libcrypto
+git@github.com: Permission denied (publickey).
+```
+
+Bypass private GitHub and re-apply from the public script:
+
+```bash
+sudo mv /etc/linmon/github_deploy /etc/linmon/github_deploy.bad
+
+wget -qO /tmp/install-linux-syslog.sh \
+  https://raw.githubusercontent.com/andylee03/linmon-winlog/main/install-linux-syslog.sh
+sudo bash /tmp/install-linux-syslog.sh
+
+sudo /usr/local/sbin/install-linux-syslog.sh --show
+# expect: script v1.0.2  and filter including auth,authpriv.info
+```
+
+To restore private updates later: copy a good **private** key (`linmon-syslog-deploy`, not `.pub`) to `/etc/linmon/github_deploy`, `chmod 600`, strip CRLF (`sed -i 's/\r$//' …`), then `ssh-keygen -y -f /etc/linmon/github_deploy` must succeed.
 
 ---
 
@@ -110,7 +144,8 @@ Re-downloads `install-linux-syslog.sh` and applies the saved `/etc/linmon-syslog
 | `--show` | print saved config |
 | `--uninstall` | remove forwarder |
 
-Default `--min err`: err/crit/alert/emerg + auth + kernel. No history dump.
+Default `--min err` (**v1.0.2+**): `*.err` / crit / alert / emerg **+** `auth,authpriv.info` **+** `kern.err`.  
+`authpriv.info` is required for sshd **Failed password** / **Invalid user** (`authpriv.notice` alone misses them on Ubuntu/Debian). No history dump — only new messages after reload.
 
 ---
 
@@ -146,6 +181,7 @@ logger -p user.err 'linmon-syslog-test from this host'
 |------|------|
 | `/etc/rsyslog.d/99-linmon.conf` | Forwarder |
 | `/etc/linmon-syslog.conf` | Last host/port/proto/filter |
+| `/etc/linmon/github_deploy` | Optional private deploy key (USB pack only) |
 
 ---
 
@@ -159,3 +195,5 @@ logger -p user.err 'linmon-syslog-test from this host'
 | No logs in UI | Filter **linux (error)** not `linux`; `--host` is linmon **IP**; `--test` / `logger -p user.err` |
 | Install ran on linmon server, still no logs | Hairpin: you used `--host` = this machine’s LAN IP. Use `172.16.0.20` or install on a **different** Linux box |
 | Logs appear on HK but you wanted SG | You used `--host 192.168.3.200`; SG needs `192.168.11.4` |
+| `error in libcrypto` / clone Permission denied | Corrupt `/etc/linmon/github_deploy` — move aside and wget public `install-linux-syslog.sh` (see UPDATE) |
+| No SSH Failed password in Logs | Need **v1.0.2+** (`authpriv.info`); run public UPDATE |
