@@ -620,7 +620,7 @@ On **syslog-4**, Host Setup Linux row for the box itself:
 | IP / Host | **`host.docker.internal`** (or `172.17.0.1`) — **not** `192.168.21.4` |
 | Port | `22` |
 | User | e.g. `metis` |
-| Key path | `/keys/id_ed25519` if you mounted a key; else Password. **v1.4.103+ Admin:** Host Setup bar **Upload** into `/keys/` (compose `/keys` must be **rw**); you type/select Key path yourself |
+| Key path | `/keys/id_ed25519` if you mounted a key; else Password. **v1.4.104+ Admin:** Host Setup **Upload** into `/keys/` (compose `/keys` **rw**); Key path is a **dropdown** of those files |
 | Log | optional SSH journal |
 
 Same for 11.4 (`192.168.11.4` forbidden) and 3.200 (`192.168.3.200` forbidden). Other LAN PCs still use their real IP.
