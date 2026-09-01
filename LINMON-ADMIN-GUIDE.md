@@ -90,9 +90,10 @@ If Host / Web / Syslog / Scheduler / User Setup are missing, you are **not** Adm
 1. MENU → **Host Setup**. Header: **+ Linux · + Windows · + SMA · + PVE · + PBS · + FortiGate · Save · Close**.  
 2. Click the **+** for the kind you need. One row appears.  
 3. Fill **Name**, **IP / Host**, **Port** (linux 22 / windows 3389 / SMA 8443 / PVE 8006 / PBS 8007 / FG 443), **User / Token**, **Password / API key** (blank = keep saved).  
-4. Tick **On**. **Log** = SSH journal on the 10‑min poll (not Windows Event Log).  
-5. **HostKey +ssh-rsa** / **Pubkey +ssh-rsa**: only old OpenSSH after TCP already works. **Do not** tick to “fix” `i/o timeout`.  
-6. Trash icon = delete that row (in the draft). **Save**. Wait for **Hosts saved**. Close.
+4. **SSH key (Admin only):** on linux/windows rows, **Upload** a private key file (unencrypted OpenSSH/PEM). It is stored under `/keys/hosts/` and **Key path** is set automatically. **Clear** removes that managed file. Non-admins do not see Upload/Clear and the API returns 403. Matching **public** key must already be in the target’s `authorized_keys`. Passphrase-protected keys are not supported. Blank Key path on Save = keep saved path.  
+5. Tick **On**. **Log** = SSH journal on the 10‑min poll (not Windows Event Log).  
+6. **HostKey +ssh-rsa** / **Pubkey +ssh-rsa**: only old OpenSSH after TCP already works. **Do not** tick to “fix” `i/o timeout`.  
+7. Trash icon = delete that row (in the draft). **Save**. Wait for **Hosts saved**. Close.
 
 **This linmon box itself:** IP **`172.17.0.1`** or `host.docker.internal`, never `192.168.21.4` / `.11.4` / `.3.200`. **Other machines keep real LAN IPs.**
 
@@ -313,8 +314,8 @@ Deleting an SMA row must also clear legacy **Syslog** `sma_url` / `sma_name` (th
 4. **IP / Host** = IPv4, e.g. `192.168.3.10`.  
 5. **Port** = SSH port (`22` or `7788` like 3.200 itself).  
 6. **User** = SSH user.  
-7. **Key path** = `/keys/id_ed25519` if the container has that key.  
-8. **Password** = only if you do not use a key.  
+7. **Key path** — either leave `/keys/id_ed25519` if that shared key is mounted, **or** (Admin only, v1.4.102+) choose a private key file → **Upload** (saved as `/keys/hosts/<name>__<ip>.key`, Key path filled for you). **Clear** removes a managed upload only. Target host must already trust the matching public key.  
+8. **Password** = only if you do not use a key (blank = keep saved).  
 9. **On** = ticked.  
 10. **Log** = ticked only if you want SSH journal errors on the card (not syslog).  
 11. Click **Save**. Wait for **Hosts saved**.  
@@ -465,12 +466,14 @@ Full text: [INSTALL-LINUX-HOST-CLIENT.md](https://github.com/andylee03/linmon-wi
 
 **GitHub only.** Do not `git pull` `vide`. Do not scp bins from the office PC. Do not `sudo`.
 
+Use the public **`SERVER-UPDATE.sh`** (this is the server update script — **not** the Linux client `UPDATE.sh`):
+
 ```bash
 wget -qO /tmp/SERVER-UPDATE.sh \
   https://raw.githubusercontent.com/andylee03/linmon-winlog/main/SERVER-UPDATE.sh
 bash /tmp/SERVER-UPDATE.sh --dir /data/linmon
 curl -skS https://127.0.0.1/api/version
-# HTTP-only sites (syslog-4): curl -sS http://127.0.0.1/api/version
+# expect e.g. "1.4.102" — HTTP-only: curl -sS http://127.0.0.1/api/version
 ```
 
 | Site | SSH | `--dir` | Check |
@@ -479,7 +482,17 @@ curl -skS https://127.0.0.1/api/version
 | 11.4 | `athenabest` :22 | `/data/linmon` | |
 | 21.4 | `metis` :22 | `/data/linmon` | |
 
-Uses `~/.linmon/bin_deploy` to clone private `andylee03/linmon-bin`. Old `bash …/UPDATE.sh` (sparse-checkout) fails with `INSTALL.sh is not a directory`.
+Uses `~/.linmon/bin_deploy` to clone private `andylee03/linmon-bin`. When the stack is already up, UPDATE mainly **`docker cp`**s `linmon` / `collect-log` into the running containers (does not rebuild images).
+
+**Compose / `/keys` (v1.4.102+ Upload SSH key):** pack compose uses `/keys:rw`. Stock UPDATE may leave an old `/keys:ro` on disk. If Host Setup **Upload** fails to write keys, sync compose from the pack clone and recreate, then UPDATE **again** (recreate resets the binary overlay):
+
+```bash
+cp -f ~/.linmon/bin-repo/docker-compose.yml /data/linmon/docker-compose.yml
+mkdir -p /data/linmon/keys
+cd /data/linmon && bash scripts/dc.sh up -d
+bash /tmp/SERVER-UPDATE.sh --dir /data/linmon   # re-apply bins after recreate
+grep keys /data/linmon/docker-compose.yml             # expect /keys:rw
+```
 
 HTTPS needs `ENABLE_HTTPS=1` and cert files; missing certs → nginx dies.
 
