@@ -90,7 +90,7 @@ If Host / Web / Syslog / Scheduler / User Setup are missing, you are **not** Adm
 1. MENU → **Host Setup**. Header: **+ Linux · + Windows · + SMA · + PVE · + PBS · + FortiGate · Save · Close**.  
 2. Click the **+** for the kind you need. One row appears.  
 3. Fill **Name**, **IP / Host**, **Port** (linux 22 / windows 3389 / SMA 8443 / PVE 8006 / PBS 8007 / FG 443), **User / Token**, **Password / API key** (blank = keep saved).  
-4. **SSH key (Admin only):** on linux/windows rows, **Upload** a private key file (unencrypted OpenSSH/PEM). It is stored under `/keys/hosts/` and **Key path** is set automatically. **Clear** removes that managed file. Non-admins do not see Upload/Clear and the API returns 403. Matching **public** key must already be in the target’s `authorized_keys`. Passphrase-protected keys are not supported. Blank Key path on Save = keep saved path.  
+4. **SSH keys folder (Admin only, v1.4.103+):** above the table, **Upload** a private key into container **`/keys/`**. The bar lists files already there. Click a path chip to fill **Key path** on a linux/windows row (or type `/keys/filename` yourself). **Del** removes that file from `/keys`. Non-admins do not see the bar (API 403). Matching **public** key must already be on the target `authorized_keys`. Passphrase-protected keys are not supported. Blank Key path on Save = keep saved path.  
 5. Tick **On**. **Log** = SSH journal on the 10‑min poll (not Windows Event Log).  
 6. **HostKey +ssh-rsa** / **Pubkey +ssh-rsa**: only old OpenSSH after TCP already works. **Do not** tick to “fix” `i/o timeout`.  
 7. Trash icon = delete that row (in the draft). **Save**. Wait for **Hosts saved**. Close.
@@ -314,7 +314,7 @@ Deleting an SMA row must also clear legacy **Syslog** `sma_url` / `sma_name` (th
 4. **IP / Host** = IPv4, e.g. `192.168.3.10`.  
 5. **Port** = SSH port (`22` or `7788` like 3.200 itself).  
 6. **User** = SSH user.  
-7. **Key path** — either leave `/keys/id_ed25519` if that shared key is mounted, **or** (Admin only, v1.4.102+) choose a private key file → **Upload** (saved as `/keys/hosts/<name>__<ip>.key`, Key path filled for you). **Clear** removes a managed upload only. Target host must already trust the matching public key.  
+7. **Key path** — type e.g. `/keys/id_ed25519`. (Admin) use the **SSH keys folder** bar above the table to **Upload** into `/keys/`, then click the chip or type the path. Target host must already trust the matching public key.  
 8. **Password** = only if you do not use a key (blank = keep saved).  
 9. **On** = ticked.  
 10. **Log** = ticked only if you want SSH journal errors on the card (not syslog).  
