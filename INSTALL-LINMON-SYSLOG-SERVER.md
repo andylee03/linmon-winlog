@@ -206,7 +206,7 @@ Always **wget a fresh `SERVER-UPDATE.sh` from GitHub**. Do not scp binaries from
 
 First web login: **`admin` / `change-me`**. Change that password immediately. Do not copy `linmon.json` from another site.
 
-**Android APK (sideload WebView):** https://github.com/andylee03/linmon-winlog/releases/download/linmon-apk-v1.4.100/linmon.apk — default `https://syslog.athenabest.com`; **long-press** to change server. Not Play Store.
+**Android APK (sideload WebView):** https://github.com/andylee03/linmon-winlog/releases/download/linmon-apk-v1.0.0/linmon.apk — default `https://syslog.athenabest.com`; open app → pick site before sign-in. APK version independent of server. Not Play Store / not GitHub Latest.
 
 **MENU how-to** (Save writes; Close discards): **`docs/LINMON-ADMIN-GUIDE.md` §3b–3g**.
 
@@ -620,7 +620,7 @@ On **syslog-4**, Host Setup Linux row for the box itself:
 | IP / Host | **`host.docker.internal`** (or `172.17.0.1`) — **not** `192.168.21.4` |
 | Port | `22` |
 | User | e.g. `metis` |
-| Key path | `/keys/id_ed25519` if you mounted a key; else Password |
+| Key path | `/keys/id_ed25519` if you mounted a key; else Password. **v1.4.102+ Admin:** Host Setup **Upload** stores per-host keys under `/keys/hosts/` (compose `/keys` must be **rw**) |
 | Log | optional SSH journal |
 
 Same for 11.4 (`192.168.11.4` forbidden) and 3.200 (`192.168.3.200` forbidden). Other LAN PCs still use their real IP.
