@@ -368,6 +368,8 @@ Or **omit** this machine from Host Setup and only collect rsyslog → `172.16.0.
 3. On the PC, install **Winlog** (public `linmon-winlog-setup.exe`). In Winlog Settings, syslog host = **`192.168.3.200`**, port 514.  
 4. User who should click **RDP** must be in **User Setup → RDP**.
 
+**Winlog send filter (v1.0.91+):** default sends **Critical + Error + Warning** (plus logon/service/audit failures). **Information** stays off. Older agents only sent Critical/Error — tray **Update from GitHub** (or reinstall setup) migrates once and ticks Warning. To stop Warnings again, uncheck **Warning** in Settings and Save.
+
 ### 6.3 Add FortiGate API (CPU/RAM bars)
 
 Create the API user **on the FortiGate**, then paste into linmon.
