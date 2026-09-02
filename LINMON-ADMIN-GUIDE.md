@@ -137,6 +137,8 @@ HK blueprint lines: `athenabest-91g-hk=192.168.3.253`, `abhk-cpc-91=192.168.98.2
 
 QNAP WEB needs the linmon Docker host to route to the NAS LAN IP (same network as syslog). If auto-login fails (QTS 2FA / odd firmware), leave password blank and sign in on the proxied page.
 
+**Cloudflare:** QTS uses `/cgi-bin/…`. Cloudflare Managed WAF often returns **1020** on that string. From **v1.5.1** linmon rewrites public URLs to `/appl-ui/qnap/Name/qbin/…` (no `cgi-bin` in the browser). If you still see CF **1020/520/522/524**, add a WAF exception for `http.request.uri.path contains "/appl-ui/"` (or set that hostname DNS-only / grey-cloud for testing).
+
 ---
 
 ## 3e. MENU → Scheduler
