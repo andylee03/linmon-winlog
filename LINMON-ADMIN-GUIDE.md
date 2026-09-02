@@ -146,9 +146,16 @@ CSV export + optional purge. collect-log still every **10 minutes** (SSH ErrorCo
 1. MENU → **Scheduler**.  
 2. Tick **Enable scheduler**. Tick **scheduled CSV export** and/or **Purge logs older than retain days**.  
 3. **Frequency:** daily / weekly / monthly. **Time (local)**. Weekly → weekday. Monthly → day of month. **Keep logs (days)** e.g. 90.  
-4. **Host path** e.g. `/data/exportlog` (3.200) or `/data/linmon-logs` (11.4). Must be under `/data` or `/mnt` (compose bind).  
-5. **Split CSV by device type** (folders `windows/` `fortigate/` …). Optional combined CSV. Type checkboxes: none checked = all types.  
-6. **Save**. **Test Export** writes a file now. **Test Housekeeping (dry-run)** counts deletes. **Test Purge (execute)** really deletes old rows — use carefully.
+4. **Export window** (v1.5.8+):  
+   - **Previous period** — daily = yesterday; weekly = previous week; monthly = previous calendar month.  
+   - **Last N days** — rolling window ending at run time (set N).  
+   Scheduled runs export **only that window** (not the whole DB).  
+5. **Host path** e.g. `/data/exportlog` (3.200) or `/data/linmon-logs` (11.4). Must be under `/data` or `/mnt` (compose bind).  
+6. **Split CSV by device type** (folders `windows/` `fortigate/` …). Optional combined CSV. Type checkboxes: none checked = all types.  
+7. **Save**.  
+8. **Manual export (to folder):** set **From / To** (dates) → **Export now**. Optional **Use schedule window** / **Export schedule window**. Writes to the host folder (same split/types). Large ranges can take minutes.  
+9. **Logs → Export Log** remains the browser download path (filters + dates, max 100k rows).  
+10. **Test Housekeeping (dry-run)** counts deletes. **Test Purge (execute)** really deletes old rows — use carefully.
 
 Prod path after `/data` bind: **`/data/exportlog`**. Changing a folder under `/data` or `/mnt` does not need `dc.sh`.
 
