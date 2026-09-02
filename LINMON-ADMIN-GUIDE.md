@@ -130,7 +130,7 @@ Fixes Docker rewriting syslog source to `172.16.0.1`. One line: `Name=192.168.x.
 2. **SMA syslog name → LAN IP** (AMC keys stay in Host Setup).  
 3. **FortiGate map:** syslog **devname** = management IP. Optional default FG IP.  
 4. **QNAP map:** RFC hostname = NAS IP. **Exact hostname** only (`metis-sg` must not match `Metis-SG-BDC`).  
-5. **QNAP management Web (v1.4.110+):** one line `Name|https://LAN-IP|user|password`. Dashboard **WEB** icon opens the NAS admin UI through linmon HTTPS (`/appl-ui/qnap/Name/`) so **external** users reach the LAN IP without VPN. Blank password = keep saved; `(clear)` removes it. Without user/password, WEB still proxies (you log in on the QTS page).  
+5. **QNAP management Web (v1.5.0+):** one line `Name|https://LAN-IP|user|password`. Dashboard **WEB** icon opens the NAS admin UI through linmon HTTPS (`/appl-ui/qnap/Name/`) so **external** users reach the LAN IP without VPN. Blank password = keep saved; `(clear)` removes it. Without user/password, WEB still proxies (you log in on the QTS page).  
 6. **Save**. Applies immediately (no Docker rebuild). Devices must already send to **this linmon LAN IP:514**, not the website hostname.
 
 HK blueprint lines: `athenabest-91g-hk=192.168.3.253`, `abhk-cpc-91=192.168.98.2`, `athenabest-214=192.168.3.214`. Do not paste HK maps onto 21.4.
