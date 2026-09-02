@@ -36,15 +36,16 @@ Admin edits                  linmon.json (encrypted) + Postgres websites
 - **192.168.3.200:514** = FortiGate, QNAP, Winlog, Linux rsyslog.  
 - Docker internal `172.16.0.20` = never type this in a device or browser.
 
-Two other machines you may hear about:
+Three live servers (do not copy `.env` / `linmon.json` between them):
 
-| Name | Role | Runtime |
-|------|------|---------|
-| 3.200 / syslog.athenabest.com | Production | `/data/linmon` |
-| 11.4 / scandoc-sg | Singapore | `/data/linmon` |
-| 21.4 / syslog-4 | Extra syslog server | `/data/linmon` |
+| Name | HTTPS | LAN / SSH | Runtime |
+|------|-------|-----------|---------|
+| **Prod** | https://syslog.athenabest.com | `192.168.3.200` · SSH **7788** `athenabest` | `/data/linmon` |
+| **Metis SG** | https://syslog.metisgl.com.sg | `192.168.11.4` · SSH **22** `athenabest` | `/data/linmon` |
+| **CPC NET** (syslog-4) | https://syslog.metisgl.com | `192.168.21.4` · SSH **22** `metis` | `/data/linmon` |
 
-Never copy `.env` or `linmon.json` between sites. Servers **wget from GitHub** (`SERVER-INSTALL.sh` / `SERVER-UPDATE.sh`); they do not clone `vide`.
+Live server build (2026-09-02): **v1.5.7 · `90c0677`**. Android APK is independent (**1.0.11**).  
+Servers **wget from GitHub** (`SERVER-INSTALL.sh` / `SERVER-UPDATE.sh`); they do not clone `vide`.
 
 ---
 
@@ -568,10 +569,33 @@ RDP record path: Settings saves `configs/rdp-record.env` only. Then `./scripts/d
 
 | Product | Repo | Command (on a Windows office PC) |
 |---------|------|-----------------------------------|
-| Winlog | public `andylee03/linmon-winlog` | `.\scripts\pack-winlog-syslog.ps1` then `.\scripts\release-winlog.ps1` |
+| Winlog | public `andylee03/linmon-winlog` | `.\scripts\pack-winlog-syslog.ps1` then `.\scripts\release-winlog.ps1` (**GitHub Latest**) |
 | Linux **INSTALL.sh / UPDATE.sh** | same public repo | source in `cmd/linux-syslog/pack/public/` + `scripts/install-linux-syslog.sh` — clients **wget** from `linmon-winlog` (no private key) |
-| **Android APK** | same public repo | https://github.com/andylee03/linmon-winlog/releases/download/linmon-apk-v1.0.1/linmon.apk — sideload; pick site before sign-in; per-site fingerprint after first OTP (server ≥ 1.4.101). **v1.0.1+** checks GitHub for APK updates on open. APK version independent of server. Not GitHub Latest. |
+| **Android APK** | same public repo | see **§12b** — tag `linmon-apk-v*` (**not** Latest; Winlog stays Latest) |
 | Linux country USB (optional) | private `andylee03/linmon-syslog` | `.\scripts\pack-linux-syslog.ps1` → `dist\linmon-syslog\` (+ read-only deploy key). Prefer public wget for updates. |
+
+### 12b. Android APK (sideload)
+
+| | |
+|--|--|
+| **Current** | **1.0.11** · `linmon-apk-v1.0.11` |
+| **Download** | https://github.com/andylee03/linmon-winlog/releases/download/linmon-apk-v1.0.11/linmon.apk |
+| **Package** | `com.abagile.linmon` |
+| **Needs server** | ≥ **1.4.101** for fingerprint / face device login |
+| **Build** | `.\scripts\build-linmon-apk.ps1` → `dist\linmon.apk` |
+| **Signing** | stable `android/linmon/keystore/linmon-release.jks` (v1.0.9+) |
+
+**Default sites in the APK:** Prod · Metis SG (`syslog.metisgl.com.sg`) · CPC NET (`syslog.metisgl.com`).
+
+**Behaviour (admin should know):**
+
+- Open → check GitHub for newer `linmon-apk-v*` → **Update / Not now** → site picker.  
+- Long-press **Sites** also has **Check for APK update…**.  
+- Update downloads APK, **fully exits** the app, then opens the system installer.  
+- Login footer shows server version **· APK x.y.z**.  
+- Face unlock: many OEMs only allow lock-screen face — apps need Class‑2 biometric or fingerprint.  
+- **Package conflict** installing over 1.0.8 or older: uninstall once, then install 1.0.11+ (signing key changed).  
+- After releasing a new APK: `gh release edit linmon-apk-vX.Y.Z --latest=false` and keep **Winlog** as Latest.
 
 ---
 
@@ -590,3 +614,7 @@ RDP record path: Settings saves `configs/rdp-record.env` only. Then `./scripts/d
 | Linux card “SSH journal errors (0)” but Logs full | Normal if journal is quiet — use **Linux Syslog** box / double‑click card (§3h); check client → `:514` |
 | Double‑click Linux card does nothing useful | Need server **v1.4.109+**; Ctrl+F5; double‑click card body (not only the name) |
 | nginx down | Certs + `ENABLE_HTTPS=1` |
+| Android APK “package conflict” on update | Uninstall once; install **1.0.11+** (stable key). Later updates should overwrite |
+| Android APK update leaves blank / stuck | Need **1.0.10+** (exit before installer). Cancel on Add/Manage before login → back to site picker (**1.0.5+**) |
+| Android “biometric unavailable” but phone has face | Lock-screen-only face; use fingerprint or password/OTP |
+| APK release became GitHub **Latest** | `gh release edit linmon-apk-v… --latest=false`; set Winlog tag `--latest` |

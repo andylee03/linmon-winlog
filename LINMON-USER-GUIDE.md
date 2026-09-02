@@ -4,7 +4,8 @@ For people who have **never used this system**.
 Site: **https://syslog.athenabest.com** (Hong Kong production).
 
 Administrators who add hosts, SMTP, and users: **[LINMON-ADMIN-GUIDE.md](LINMON-ADMIN-GUIDE.md)**.  
-Linux computer that only *sends* logs: **[INSTALL-LINUX-HOST-CLIENT.md](INSTALL-LINUX-HOST-CLIENT.md)** (public wget INSTALL / UPDATE; installer **v1.0.2+** includes SSH Failed password via `authpriv.info`).
+Linux computer that only *sends* logs: **[INSTALL-LINUX-HOST-CLIENT.md](INSTALL-LINUX-HOST-CLIENT.md)** (public wget INSTALL / UPDATE; installer **v1.0.2+** includes SSH Failed password via `authpriv.info`).  
+**Android phone:** optional **LINMON APK** (§8) — same login as the browser, plus fingerprint / Face ID where the phone allows apps to use it.
 
 ---
 
@@ -12,12 +13,13 @@ Linux computer that only *sends* logs: **[INSTALL-LINUX-HOST-CLIENT.md](INSTALL-
 
 LINMON is a **web page** that shows whether servers, PCs, firewalls, and NAS boxes are healthy, and stores **syslog** (log messages they send).
 
-You do **not** install LINMON on your laptop. You only open a browser.
+On a PC you usually **only open a browser**. On Android you may also use the **LINMON APK** (sideload WebView — not Play Store).
 
 | You | Use |
 |-----|-----|
 | IT staff | This User Guide: login, phone app (TOTP), read the dashboard, understand email |
 | Admin | Admin Guide: add machines, SMTP, User Setup |
+| Android | §8 — install APK, pick site, fingerprint after first OTP |
 | A Linux server in another country | Linux host **client** install (rsyslog) — not this file |
 
 ---
@@ -267,6 +269,12 @@ Wait 15 minutes or ask an admin. Local `admin` is set not to lock on this site.
 **I need RDP / SSH and the button is missing.**  
 You are not in `rdp_users` / `ssh_users`. Ask an admin (User Setup). That is not the same as Admin.
 
+**Can I use LINMON on Android?**  
+Yes — install the APK (§8). It is not on Play Store.
+
+**Fingerprint / face says unavailable.**  
+Some phones’ face unlock works only for the lock screen, not for apps. Use fingerprint if enrolled, or password + OTP.
+
 ---
 
 ## 7. HK blueprint (short)
@@ -279,3 +287,43 @@ You are not in `rdp_users` / `ssh_users`. Ask an admin (User Setup). That is not
 | TOTP already | andy.lee, peter.ip, calvin.leung |
 | Disk/RAM mail | it.helpdesk@athenabest.com at 95% |
 | Web DOWN mail | web_check@athenabest.com |
+| Android APK | https://github.com/andylee03/linmon-winlog/releases/download/linmon-apk-v1.0.11/linmon.apk |
+
+---
+
+## 8. Android APK (phone)
+
+Sideload **LINMON** from GitHub (not Play Store). Current: **APK 1.0.11**.
+
+**Download:** https://github.com/andylee03/linmon-winlog/releases/download/linmon-apk-v1.0.11/linmon.apk  
+
+### 8.1 Install
+
+1. On the phone, allow install from this source / unknown apps when prompted.  
+2. Open the APK and install.  
+3. Open **LINMON**.
+
+### 8.2 Pick a site
+
+Every open shows **Sign in to…** (title includes **APK x.y.z**). Built-in sites:
+
+| Name | URL |
+|------|-----|
+| **Prod** | https://syslog.athenabest.com |
+| **Metis SG** | https://syslog.metisgl.com.sg |
+| **CPC NET** | https://syslog.metisgl.com |
+
+Tap a site → normal web login (AD + OTP). Long-press later → **LINMON sites** (switch / add / edit / delete / **Check for APK update**).
+
+### 8.3 Fingerprint / face (optional)
+
+1. Sign in once with **password + MFA** on that site.  
+2. Long-press → Edit site → enable **fingerprint / face**.  
+3. Later opens: biometric only → short session (~10 minutes idle). Needs linmon server **≥ 1.4.101**.
+
+### 8.4 Update the APK
+
+- **Every open** checks GitHub. If newer → **Update** / **Not now** (Not now still asks next time).  
+- Or long-press → **Check for APK update…**  
+- Update **closes LINMON** then opens the system installer.  
+- If Android says **package conflict**: uninstall LINMON once, then install 1.0.11+ (older builds used a different signing key).
