@@ -195,8 +195,12 @@ Each square is one **Linux or Windows** host from Host Setup.
 - Green-ish / online = SSH or RDP reachable.  
 - Red / offline = cannot connect (not the same as “no syslog”).  
 - FortiGate / QNAP / Windows **bars at the top** are syslog devices. Click a name to open **Logs** for that device only.
+- **Linux card (v1.4.109+):** **double‑click** the card (or click the green **Linux Syslog** box) → that host’s Logs. **Click the name** → expand detail.  
+- **Windows:** click the Event Log box / PC name in the Windows bar → Event Logs.
 
-You can click a host **name** to expand. **RDP** on a Windows card opens web remote desktop **only if** you are in the RDP user list.
+**RDP** on a Windows row opens web remote desktop **only if** you are in the RDP user list.
+
+Card “SSH journal errors (0)” with lots of Logs is normal: journal warning+ ≠ rsyslog volume (admins: Admin Guide **§3h**).
 
 ### 3.3 Logs
 

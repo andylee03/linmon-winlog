@@ -18,7 +18,7 @@ On this site the AD names allowed to change setup are:
 
 plus the local user **`admin`**.
 
-If **Host Setup** / **User Setup** / **Syslog Setup** are missing from MENU, you are **not** an admin. Stop and use the User Guide. Do not try to edit `linmon.json` by hand without reading section 2. How to use each MENU overlay: **§3b–3g**.
+If **Host Setup** / **User Setup** / **Syslog Setup** are missing from MENU, you are **not** an admin. Stop and use the User Guide. Do not try to edit `linmon.json` by hand without reading section 2. How to use each MENU overlay: **§3b–3g**. Dashboard Linux vs Windows logs: **§3h**.
 
 **RDP** and **SSH** are **separate** ticks. `calvin.leung` can use web Terminal but cannot open Host Setup.
 
@@ -91,11 +91,13 @@ If Host / Web / Syslog / Scheduler / User Setup are missing, you are **not** Adm
 2. Click the **+** for the kind you need. One row appears.  
 3. Fill **Name**, **IP / Host**, **Port** (linux 22 / windows 3389 / SMA 8443 / PVE 8006 / PBS 8007 / FG 443), **User / Token**, **Password / API key** (blank = keep saved).  
 4. **SSH keys (Admin only, v1.4.104+):** above the table, **Upload** a private key into **`/keys/`**. **Key path** is a **dropdown** — browse and pick a file from that folder (no typing). **Del** on a chip removes the file. Non-admins do not see Upload (API 403). Matching **public** key must already be on the target `authorized_keys`. Passphrase-protected keys are not supported. Blank Key path on Save = keep saved path.  
-5. Tick **On**. **Log** = SSH journal on the 10‑min poll (not Windows Event Log).  
+5. Tick **On**. **Log** = SSH `journalctl` warning+ on the 10‑min poll (**card “SSH journal errors” only** — not Windows Event Log, not rsyslog).  
 6. **HostKey +ssh-rsa** / **Pubkey +ssh-rsa**: only old OpenSSH after TCP already works. **Do not** tick to “fix” `i/o timeout`.  
 7. Trash icon = delete that row (in the draft). **Save**. Wait for **Hosts saved**. Close.
 
 **This linmon box itself:** IP **`172.17.0.1`** or `host.docker.internal`, never `192.168.21.4` / `.11.4` / `.3.200`. **Other machines keep real LAN IPs.**
+
+Dashboard Linux cards (v1.4.109+): **double‑click the card** (or click the green **Linux Syslog** box) opens that host’s Logs (`device_type=linux_error`). See **§3h**.
 
 PVE/PBS: run the public wget scripts on the Proxmox host first (§6.4). SMA API Keys = Administrator menu, not Services. Full API steps: install guide §5b. Linux SSH field-by-field: §6.1.
 
@@ -176,6 +178,31 @@ Header: **Refresh · Close**. Policy is the **top checkbox row** + **Save policy
 7. **Login lockouts:** Unlock / Unlock all.
 
 Show Authenticator secrets = live 6-digit on the grid. Yubi OTP is never shown. Enroll detail: §5.
+
+---
+
+## 3h. Dashboard — Linux vs Windows logs (v1.4.109+)
+
+Two different pipelines. Do not mix them when a card shows **0** errors but **Logs** is full.
+
+| What you see | Source | How to open |
+|--------------|--------|-------------|
+| **Windows** bar / **Windows Event Log** box | Winlog → syslog → `device_type=windows` | Click the PC name or the Event Log box |
+| **Linux Syslog** box (green) on a Linux card | rsyslog / journald-forward → `device_type=linux_error` | **Double‑click the Linux card**, or click the **Linux Syslog** box / “▶ This host logs” |
+| **SSH journal errors (N)** on a Linux card | Host Setup **Log** tick → SSH `journalctl -p warning..emerg` (10‑min poll) | Detail panel only; **not** written to `device_log` unless Scheduler “Write SSH collect into device_log” is on (leave **off**) |
+
+**Linux card clicks (v1.4.109+)**
+
+1. **Double‑click** the card → Logs filtered to that host (`linux_error`). Same idea as clicking a Windows PC for Event Log.  
+2. **Single‑click the host name** → expand detail overlay (mem/disk/alarms).  
+3. **Double‑click the resize handle** (corner) → reset that card’s saved size (not open Logs).  
+4. **⌨** → web Terminal (SSH list only).
+
+**Why card “SSH journal errors (0)” but Logs → linux (error) has hundreds**
+
+Example: `appserver` / `192.168.21.41` — rsyslog sends many **information** lines (SSH login, cron, …) into `linux_error`. The Host Setup **Log** tick only counts **journal warning+**. A quiet journal → card SSH errors = **0**, while **Linux Syslog** still shows total / 24h / err. That is expected, not a broken client.
+
+Install / UPDATE Linux senders: public wget (§8). Need **v1.0.2+** for SSH Failed password (`authpriv.info`).
 
 ---
 
@@ -317,10 +344,10 @@ Deleting an SMA row must also clear legacy **Syslog** `sma_url` / `sma_name` (th
 7. **Key path** — **dropdown** of files in `/keys/` (Upload above first if empty). Target host must already trust the matching public key.  
 8. **Password** = only if you do not use a key (blank = keep saved).  
 9. **On** = ticked.  
-10. **Log** = ticked only if you want SSH journal errors on the card (not syslog).  
+10. **Log** = ticked only if you want **SSH journal warning+** on the card (“SSH journal errors”). This is **not** rsyslog and **not** Windows Event Log. Syslog lines still appear under Logs → **linux (error)** and on the card’s **Linux Syslog** box when the client forwards to :514.  
 11. Click **Save**. Wait for **Hosts saved**.  
 
-The card appears after the next poll (up to **10 minutes**, Settings poll seconds = 600 here).
+The card appears after the next poll (up to **10 minutes**, Settings poll seconds = 600 here). **Double‑click** the card (v1.4.109+) to open that host’s syslog Logs — see **§3h**.
 
 **Do not use this linmon server’s own LAN IP** (21.4: `192.168.21.4`, 11.4: `192.168.11.4`, 3.200: `192.168.3.200`). collect-log runs **inside Docker**; `dial tcp …:22: i/o timeout` is hairpin, not a bad password. **Other hosts on the LAN keep their real IPs** and work. The hint `HostKey +ssh-rsa` only matters **after** TCP connects (old OpenSSH) — do not tick it for a timeout. You do not need that tick on hosts that already SSH OK.
 
@@ -527,6 +554,8 @@ RDP record path: Settings saves `configs/rdp-record.env` only. Then `./scripts/d
 | Ship Go `winlog-setup` as the Windows installer | Use Inno pack |
 | `taskkill` Winlog Settings from inside the form | UI hangs |
 | Think Host Setup **Log** = Windows Event Log | Winlog → syslog |
+| Think Host Setup **Log** = Logs → linux (error) | **Log** tick = SSH journal only; rsyslog = **linux_error** / Linux Syslog box (§3h) |
+| Expect card SSH errors = syslog volume | Journal warning+ can be 0 while syslog info lines fill Logs |
 | Put `.ps1` on a Linux client | Public install is **INSTALL.sh** |
 
 ---
@@ -554,4 +583,6 @@ RDP record path: Settings saves `configs/rdp-record.env` only. Then `./scripts/d
 | FortiGate CPU always 0 | Need linmon **v1.4.92+** (resource/usage) |
 | UPDATE `Permission denied (publickey)` | **Server:** `~/.linmon/bin_deploy` is `linmon-bin-deploy`, not `id_ed25519`. **Linux client:** broken `/etc/linmon/github_deploy` → move it aside and wget public `install-linux-syslog.sh` (§8) |
 | Linux client misses SSH Failed password | Need installer **v1.0.2+** (`authpriv.info`); wget public `UPDATE.sh` |
+| Linux card “SSH journal errors (0)” but Logs full | Normal if journal is quiet — use **Linux Syslog** box / double‑click card (§3h); check client → `:514` |
+| Double‑click Linux card does nothing useful | Need server **v1.4.109+**; Ctrl+F5; double‑click card body (not only the name) |
 | nginx down | Certs + `ENABLE_HTTPS=1` |
