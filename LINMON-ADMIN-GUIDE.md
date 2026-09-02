@@ -155,7 +155,7 @@ CSV export + optional purge. collect-log still every **10 minutes** (SSH ErrorCo
 5. **Host path** e.g. `/data/exportlog` (3.200) or `/data/linmon-logs` (11.4). Must be under `/data` or `/mnt` (compose bind).  
 6. **Split CSV by device type** (folders `windows/` `fortigate/` …). Optional combined CSV. Type checkboxes: none checked = all types.  
 7. **Save**.  
-8. **Manual export (to folder):** set **From / To** (dates) → **Export now**. Optional **Use schedule window** / **Export schedule window**. Writes to the host folder (same split/types). Large ranges can take minutes.  
+8. **Manual export (to folder):** set **From / To** (dates) → **Export now**. Optional **Use schedule window** / **Export schedule window**. Writes to the host folder (same split/types). **v1.5.11+** runs export in the **background** and polls status (avoids Cloudflare/nginx **HTTP 524** HTML timeout on large ranges).  
 9. **Logs → Export Log** remains the browser download path (filters + dates, max 100k rows).  
 10. **Test Housekeeping (dry-run)** counts deletes. **Test Purge (execute)** really deletes old rows — use carefully.
 
