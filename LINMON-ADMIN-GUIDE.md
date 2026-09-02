@@ -6,6 +6,8 @@ If you only need login / Authenticator / reading mail, use the **[User Guide](LI
 **Blueprint site:** https://syslog.athenabest.com  
 **Server:** `192.168.3.200` · SSH **7788** · user `athenabest` · runtime **`/data/linmon`** (`/mnt/data1t` bind-mounted as `/data`). Leftover git tree `/home/athenabest/vide` — **do not `git pull`**.
 
+**Login (v1.5.9+):** separate **Domain** field — blank = local admin; filled = AD UPN `user@Domain`. Android APK needs **no** update (WebView loads server `/login`).
+
 ![Admin MENU](img/admin-menu.svg)
 
 ---

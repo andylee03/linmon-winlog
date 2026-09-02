@@ -40,6 +40,15 @@ On a PC you usually **only open a browser**. On Android you may also use the **L
 
 ![Login flow](img/login-flow.svg)
 
+**Username + Domain (v1.5.9+):**
+
+| | Username | Domain |
+|--|----------|--------|
+| Local `admin` | `admin` | **leave blank** |
+| AD | login name (e.g. `andy.lee`) | UPN suffix (e.g. `metisgl.com`) → becomes `andy.lee@metisgl.com` |
+
+Android APK does **not** need an update for this — it loads the server login page.
+
 ### Step 1 — username and password
 
 You will see a dark card titled **LINMON** and the line *Sign in with local admin or AD account*.
