@@ -570,7 +570,7 @@ RDP record path: Settings saves `configs/rdp-record.env` only. Then `./scripts/d
 |---------|------|-----------------------------------|
 | Winlog | public `andylee03/linmon-winlog` | `.\scripts\pack-winlog-syslog.ps1` then `.\scripts\release-winlog.ps1` |
 | Linux **INSTALL.sh / UPDATE.sh** | same public repo | source in `cmd/linux-syslog/pack/public/` + `scripts/install-linux-syslog.sh` — clients **wget** from `linmon-winlog` (no private key) |
-| **Android APK** | same public repo | https://github.com/andylee03/linmon-winlog/releases/download/linmon-apk-v1.0.0/linmon.apk — sideload; pick site before sign-in; per-site fingerprint after first OTP (server ≥ 1.4.101). APK version independent of server. Not GitHub Latest. |
+| **Android APK** | same public repo | https://github.com/andylee03/linmon-winlog/releases/download/linmon-apk-v1.0.1/linmon.apk — sideload; pick site before sign-in; per-site fingerprint after first OTP (server ≥ 1.4.101). **v1.0.1+** checks GitHub for APK updates on open. APK version independent of server. Not GitHub Latest. |
 | Linux country USB (optional) | private `andylee03/linmon-syslog` | `.\scripts\pack-linux-syslog.ps1` → `dist\linmon-syslog\` (+ read-only deploy key). Prefer public wget for updates. |
 
 ---
