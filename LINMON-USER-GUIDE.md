@@ -1,11 +1,11 @@
-# LINMON User Guide
+﻿# LINMON User Guide
 
 For people who have **never used this system**.  
 Site: **https://syslog.athenabest.com** (Hong Kong production).
 
 Administrators who add hosts, SMTP, and users: **[LINMON-ADMIN-GUIDE.md](LINMON-ADMIN-GUIDE.md)**.  
 Linux computer that only *sends* logs: **[INSTALL-LINUX-HOST-CLIENT.md](INSTALL-LINUX-HOST-CLIENT.md)** (public wget INSTALL / UPDATE; installer **v1.0.2+** includes SSH Failed password via `authpriv.info`).  
-**Android phone:** optional **LINMON APK** (§8) — same login as the browser, plus fingerprint / Face ID where the phone allows apps to use it.
+**Android phone:** optional **LINMON APK** (Â§8) â€” same login as the browser, plus fingerprint / Face ID where the phone allows apps to use it.
 
 ---
 
@@ -13,14 +13,14 @@ Linux computer that only *sends* logs: **[INSTALL-LINUX-HOST-CLIENT.md](INSTALL-
 
 LINMON is a **web page** that shows whether servers, PCs, firewalls, and NAS boxes are healthy, and stores **syslog** (log messages they send).
 
-On a PC you usually **only open a browser**. On Android you may also use the **LINMON APK** (sideload WebView — not Play Store).
+On a PC you usually **only open a browser**. On Android you may also use the **LINMON APK** (sideload WebView â€” not Play Store).
 
 | You | Use |
 |-----|-----|
 | IT staff | This User Guide: login, phone app (TOTP), read the dashboard, understand email |
 | Admin | Admin Guide: add machines, SMTP, User Setup |
-| Android | §8 — install APK, pick site, fingerprint after first OTP |
-| A Linux server in another country | Linux host **client** install (rsyslog) — not this file |
+| Android | Â§8 â€” install APK, pick site, fingerprint after first OTP |
+| A Linux server in another country | Linux host **client** install (rsyslog) â€” not this file |
 
 ---
 
@@ -32,11 +32,11 @@ On a PC you usually **only open a browser**. On Android you may also use the **L
    - If you type `http://` the site should jump to https by itself.  
    - Do **not** type `192.168.3.200` in the browser unless you are on the office LAN and someone told you to.
 3. If the page never loads: you need office VPN or to be on the office network. Ask an admin. This is not a login password problem yet.
-4. You need an **Active Directory** account (same as Windows PC login), for example `andy.lee`, **or** the rare local account `admin`. If you do not have either, you cannot log in — ask an admin to create AD access; do not guess passwords (lockout: 5 wrong tries → wait 15 minutes).
+4. You need an **Active Directory** account (same as Windows PC login), for example `andy.lee`, **or** the rare local account `admin`. If you do not have either, you cannot log in â€” ask an admin to create AD access; do not guess passwords (lockout: 5 wrong tries â†’ wait 15 minutes).
 
 ---
 
-## 1. Login — click by click
+## 1. Login â€” click by click
 
 ![Login flow](img/login-flow.svg)
 
@@ -45,11 +45,11 @@ On a PC you usually **only open a browser**. On Android you may also use the **L
 | | Username | Domain |
 |--|----------|--------|
 | Local `admin` | `admin` | **leave blank** |
-| AD | login name (e.g. `andy.lee`) | UPN suffix (e.g. `metisgl.com`) → becomes `andy.lee@metisgl.com` |
+| AD | login name (e.g. `andy.lee`) | UPN suffix (e.g. `metisgl.com`) â†’ becomes `andy.lee@metisgl.com` |
 
-Android APK does **not** need an update for this — it loads the server login page.
+Android APK does **not** need an update for this â€” it loads the server login page.
 
-### Step 1 — username and password
+### Step 1 â€” username and password
 
 You will see a dark card titled **LINMON** and the line *Sign in with local admin or AD account*.
 
@@ -57,7 +57,7 @@ You will see a dark card titled **LINMON** and the line *Sign in with local admi
    - AD: usually `andy.lee` (not your email).  
    - You may also try `andy.lee@athenabest.com` if that is how your AD works.  
    - Local only: `admin`.
-2. **Password** — your normal AD password (or the local admin password).  
+2. **Password** â€” your normal AD password (or the local admin password).  
    LINMON **does not save** this password in the browser on purpose.
 3. Click **Login**.
 
@@ -69,7 +69,7 @@ You will see a dark card titled **LINMON** and the line *Sign in with local admi
 | Page does nothing | Wait; check you used https. |
 | You never get to a second screen | OTP may be off (it is **on** at this site) or the account is locked. Ask admin. |
 
-### Step 2 — “Password OK. Choose how to verify…”
+### Step 2 â€” â€œPassword OK. Choose how to verifyâ€¦â€
 
 You are not in yet. Pick **one** button (only buttons you already registered appear):
 
@@ -83,7 +83,7 @@ If you only see **Email code**, you have not finished Authenticator yet. You can
 
 Click **Back** if you typed the wrong user.
 
-### Step 3a — Authenticator
+### Step 3a â€” Authenticator
 
 1. Unlock your phone. Open **Google Authenticator** or **Microsoft Authenticator**.
 2. Find the account named **LINMON** (or similar).
@@ -93,15 +93,15 @@ Click **Back** if you typed the wrong user.
 
 Wrong code: wait for the next 30-second number. Do not keep guessing the same digits.
 
-### Step 3b — Email code
+### Step 3b â€” Email code
 
 1. Click **Email code**. The site sends mail.
-2. Open the mailbox that belongs to your AD **mail** field (not a random Gmail unless that is what AD has). Local `admin` → **it.helpdesk@athenabest.com**.
+2. Open the mailbox that belongs to your AD **mail** field (not a random Gmail unless that is what AD has). Local `admin` â†’ **it.helpdesk@athenabest.com**.
 3. Code is valid about **5 minutes** (300 seconds).
-4. Type 6 digits → **Verify & sign in**.
+4. Type 6 digits â†’ **Verify & sign in**.
 5. **Resend code** if the mail did not arrive (check spam). You have **5** tries.
 
-### Step 3c — YubiKey
+### Step 3c â€” YubiKey
 
 1. Plug the key in (if it is USB).
 2. Click **Click here, then touch YubiKey once**.
@@ -118,7 +118,7 @@ The session lasts **8 hours**. If you **close the browser**, you must log in aga
 
 ---
 
-## 2. Register Authenticator (TOTP) — first-time users
+## 2. Register Authenticator (TOTP) â€” first-time users
 
 You need a phone app that shows changing 6-digit codes. This is **not** SMS.
 
@@ -126,45 +126,45 @@ You need a phone app that shows changing 6-digit codes. This is **not** SMS.
 
 ### 2.1 Install the app (once)
 
-On the phone, install **Google Authenticator** or **Microsoft Authenticator** from the official store. Open it. You do not need a Google/Microsoft “LINMON account” inside the app — you will **scan a QR**.
+On the phone, install **Google Authenticator** or **Microsoft Authenticator** from the official store. Open it. You do not need a Google/Microsoft â€œLINMON accountâ€ inside the app â€” you will **scan a QR**.
 
-### 2.2 Path A — the site forces you after Email login
+### 2.2 Path A â€” the site forces you after Email login
 
 If you logged in with **Email only** and have no app and no YubiKey, you may see:
 
-*You signed in with Email OTP only. You must register a second factor…*
+*You signed in with Email OTP only. You must register a second factorâ€¦*
 
 1. Leave the tab **Authenticator** selected.
-2. Wait until a **white QR square** appears (not “Loading QR…”).
-3. In the phone app: **+** → **Scan QR code** → point at the screen.
+2. Wait until a **white QR square** appears (not â€œLoading QRâ€¦â€).
+3. In the phone app: **+** â†’ **Scan QR code** â†’ point at the screen.
 4. The app shows **LINMON** and 6 digits.
 5. Type those digits in **Authenticator code** on the computer.
 6. Click **Confirm & continue**.
 
 **New QR** if the square is missing or you waited too long.  
-**Cancel / Logout** if you must stop — you still will not have a working app until you finish this.
+**Cancel / Logout** if you must stop â€” you still will not have a working app until you finish this.
 
 If the camera cannot scan: an admin can read the **secret** text under the QR and you type it manually in the app (*Enter a setup key*).
 
-### 2.3 Path B — you are already on the Dashboard
+### 2.3 Path B â€” you are already on the Dashboard
 
 Anyone allowed to self-register (this site: **yes**):
 
-1. Left side: click **MENU** if the drawer is closed. (There is **« Hide**; click the left edge or MENU to open again.)
+1. Left side: click **MENU** if the drawer is closed. (There is **Â« Hide**; click the left edge or MENU to open again.)
 2. Click **Settings**.
 3. Scroll to **Authenticator app**.
 4. Click **Register Authenticator**.
-5. Scan QR on the phone → type 6 digits → confirm.
+5. Scan QR on the phone â†’ type 6 digits â†’ confirm.
 
 To remove it later: **Remove Authenticator** (you should enroll again before you rely on login).
 
 YubiKey on the same Settings page is **optional** and **does not delete** Authenticator.
 
-### 2.4 Path C — an admin does it for you
+### 2.4 Path C â€” an admin does it for you
 
 You sit with your phone next to an admin (`andy.lee`, `peter.ip`, or `steven.khoo`).
 
-1. Admin opens **MENU → User Setup**.
+1. Admin opens **MENU â†’ User Setup**.
 2. **Register Authenticator for**: your AD name e.g. `andy.lee`. Type **AD user**.
 3. Admin clicks **+ Register Authenticator**.
 4. **You** scan the QR on **their** screen.
@@ -192,32 +192,32 @@ Choose **Authenticator app** instead of waiting for email. Keep the phone with y
 | **Settings** | Everyone sees some; admin sees SMTP/OTP | Site name, mail, login policy |
 | **Host Setup** | Admin | List of machines |
 | **Web / SSL Setup** | Admin | Public websites to ping |
-| **Syslog Setup** | Admin | Name → real IP (Docker NAT) |
+| **Syslog Setup** | Admin | Name â†’ real IP (Docker NAT) |
 | **Scheduler** | Admin | CSV export of logs |
 | **Display** | Everyone | How big cards are, what to hide |
 | **User Setup** | Admin | 2FA and who is Admin/RDP/SSH |
 
-**Close** or **« Hide** does not log you out.
+**Close** or **Â« Hide** does not log you out.
 
 ### 3.2 Dashboard cards
 
 Each square is one **Linux or Windows** host from Host Setup.
 
 - Green-ish / online = SSH or RDP reachable.  
-- Red / offline = cannot connect (not the same as “no syslog”).  
+- Red / offline = cannot connect (not the same as â€œno syslogâ€).  
 - FortiGate / QNAP / Windows **bars at the top** are syslog devices. Click a name to open **Logs** for that device only.
-- **Linux card (v1.4.109+):** **double‑click** the card (or click the green **Linux Syslog** box) → that host’s Logs. **Click the name** → expand detail.  
-- **Windows:** click the Event Log box / PC name in the Windows bar → Event Logs.
+- **Linux card (v1.4.109+):** **doubleâ€‘click** the card (or click the green **Linux Syslog** box) â†’ that hostâ€™s Logs. **Click the name** â†’ expand detail.  
+- **Windows:** click the Event Log box / PC name in the Windows bar â†’ Event Logs.
 
 **RDP** on a Windows row opens web remote desktop **only if** you are in the RDP user list.
 
-Card “SSH journal errors (0)” with lots of Logs is normal: journal warning+ ≠ rsyslog volume (admins: Admin Guide **§3h**).
+Card â€œSSH journal errors (0)â€ with lots of Logs is normal: journal warning+ â‰  rsyslog volume (admins: Admin Guide **Â§3h**).
 
 ### 3.3 Logs
 
-**MENU → Logs**.
+**MENU â†’ Logs**.
 
-- Pick device type if the page offers filters (FortiGate, **linux (error)**, windows, qnap…).  
+- Pick device type if the page offers filters (FortiGate, **linux (error)**, windows, qnapâ€¦).  
   **linux** = SSH poll. **linux (error)** = rsyslog from `INSTALL.sh` (OS errors + SSH login failures on v1.0.2+ clients).  
 - Search / time range if shown.  
 - This is **not** email. One log line does **not** send mail.
@@ -232,13 +232,13 @@ You do **not** turn these on yourself unless you are an admin. This section is s
 
 | Subject / kind | Why | Who gets it **on this site** | What you should do |
 |----------------|-----|------------------------------|--------------------|
-| Disk alert | A Linux disk is ≥ **95%** full | `it.helpdesk@athenabest.com` | Free space or tell admin. Mail repeats at most every **60 minutes** for the same disk. |
-| RAM alert | Memory ≥ **95%** for **60 seconds** | same | Check runaway process; not a one-second spike. |
+| Disk alert | A Linux disk is â‰¥ **95%** full | `it.helpdesk@athenabest.com` | Free space or tell admin. Mail repeats at most every **60 minutes** for the same disk. |
+| RAM alert | Memory â‰¥ **95%** for **60 seconds** | same | Check runaway process; not a one-second spike. |
 | Website DOWN | A monitored URL failed | `web_check@athenabest.com` (**not** helpdesk) | Check the website; Slack `#web-monitor` may ping too. |
-| SSL mail | Cert expiring | **Off** on this site | — |
+| SSL mail | Cert expiring | **Off** on this site | â€” |
 | Login Email OTP | You clicked Email code | Your AD mail / helpdesk for `admin` | Type the 6 digits; not an incident. |
 
-**SMTP is on** here (`smtp.abagile.com`). If nobody gets disk mail, the disk may be under 95%, or cooldown, or SMTP down — that is an **admin** job (Test HD email).
+**SMTP is on** here (`smtp.abagile.com`). If nobody gets disk mail, the disk may be under 95%, or cooldown, or SMTP down â€” that is an **admin** job (Test HD email).
 
 If you expected website mail in helpdesk: **wrong box**. Websites go to **web_check@athenabest.com**.
 
@@ -258,10 +258,10 @@ If you expected website mail in helpdesk: **wrong box**. Websites go to **web_ch
 ## 6. FAQ for beginners
 
 **I have no MENU.**  
-Click the left side or the menu button. On a phone, look for **☰**.
+Click the left side or the menu button. On a phone, look for **â˜°**.
 
 **I only wanted to read logs.**  
-Log in, MENU → **Logs**. You do not need Host Setup. Linux rsyslog is **linux (error)**, not **linux**.
+Log in, MENU â†’ **Logs**. You do not need Host Setup. Linux rsyslog is **linux (error)**, not **linux**.
 
 **Authenticator is missing on login.**  
 It was never **Confirm**ed. Use Email this time, then section 2.
@@ -279,10 +279,10 @@ Wait 15 minutes or ask an admin. Local `admin` is set not to lock on this site.
 You are not in `rdp_users` / `ssh_users`. Ask an admin (User Setup). That is not the same as Admin.
 
 **Can I use LINMON on Android?**  
-Yes — install the APK (§8). It is not on Play Store.
+Yes â€” install the APK (Â§8). It is not on Play Store.
 
 **Fingerprint / face says unavailable.**  
-Some phones’ face unlock works only for the lock screen, not for apps. Use fingerprint if enrolled, or password + OTP.
+Some phonesâ€™ face unlock works only for the lock screen, not for apps. Use fingerprint if enrolled, or password + OTP.
 
 ---
 
@@ -291,20 +291,20 @@ Some phones’ face unlock works only for the lock screen, not for apps. Use fin
 | | |
 |--|--|
 | Open | https://syslog.athenabest.com |
-| AD | `192.168.3.29` LDAPS · BMWL |
-| OTP | On · Authenticator + Email + Yubi |
+| AD | `192.168.3.29` LDAPS Â· BMWL |
+| OTP | On Â· Authenticator + Email + Yubi |
 | TOTP already | andy.lee, peter.ip, calvin.leung |
 | Disk/RAM mail | it.helpdesk@athenabest.com at 95% |
 | Web DOWN mail | web_check@athenabest.com |
-| Android APK | https://github.com/andylee03/linmon-winlog/releases/download/linmon-apk-v1.0.11/linmon.apk |
+| Android APK | https://github.com/andylee03/linmon-winlog/releases/download/linmon-apk-v1.0.12/linmon.apk |
 
 ---
 
 ## 8. Android APK (phone)
 
-Sideload **LINMON** from GitHub (not Play Store). Current: **APK 1.0.11**.
+Sideload **LINMON** from GitHub (not Play Store). Current: **APK 1.0.12**.
 
-**Download:** https://github.com/andylee03/linmon-winlog/releases/download/linmon-apk-v1.0.11/linmon.apk  
+**Download:** https://github.com/andylee03/linmon-winlog/releases/download/linmon-apk-v1.0.12/linmon.apk  
 
 ### 8.1 Install
 
@@ -314,7 +314,7 @@ Sideload **LINMON** from GitHub (not Play Store). Current: **APK 1.0.11**.
 
 ### 8.2 Pick a site
 
-Every open shows **Sign in to…** (title includes **APK x.y.z**). Built-in sites:
+Every open shows **Sign in toâ€¦** (title includes **APK x.y.z**). Built-in sites:
 
 | Name | URL |
 |------|-----|
@@ -322,17 +322,17 @@ Every open shows **Sign in to…** (title includes **APK x.y.z**). Built-in site
 | **Metis SG** | https://syslog.metisgl.com.sg |
 | **CPC NET** | https://syslog.metisgl.com |
 
-Tap a site → normal web login (AD + OTP). Long-press later → **LINMON sites** (switch / add / edit / delete / **Check for APK update**).
+Tap a site â†’ normal web login (AD + OTP). Long-press later â†’ **LINMON sites** (switch / add / edit / delete / **Check for APK update**).
 
 ### 8.3 Fingerprint / face (optional)
 
 1. Sign in once with **password + MFA** on that site.  
-2. Long-press → Edit site → enable **fingerprint / face**.  
-3. Later opens: biometric only → short session (~10 minutes idle). Needs linmon server **≥ 1.4.101**.
+2. Long-press â†’ Edit site â†’ enable **fingerprint / face**.  
+3. Later opens: biometric only â†’ short session (~10 minutes idle). Needs linmon server **â‰¥ 1.4.101**.
 
 ### 8.4 Update the APK
 
-- **Every open** checks GitHub. If newer → **Update** / **Not now** (Not now still asks next time).  
-- Or long-press → **Check for APK update…**  
+- **Every open** checks GitHub. If newer â†’ **Update** / **Not now** (Not now still asks next time).  
+- Or long-press â†’ **Check for APK updateâ€¦**  
 - Update **closes LINMON** then opens the system installer.  
-- If Android says **package conflict**: uninstall LINMON once, then install 1.0.11+ (older builds used a different signing key).
+- If Android says **package conflict**: uninstall LINMON once, then install 1.0.12+ (older builds used a different signing key).
